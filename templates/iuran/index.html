@@ -275,7 +275,13 @@
                   </button>
                 </form>
                 <button type="button" 
-                        onclick="sendSingleWaReminder('{{ iur.warga.nama }}', '{{ iur.warga.no_hp or '' }}', '{{ iur.warga.no_rumah or '-' }}', {{ iur.periode_bulan }}, {{ iur.periode_tahun }}, {{ iur.jumlah }})"
+                        data-nama="{{ iur.warga.nama }}"
+                        data-hp="{{ iur.warga.no_hp or '' }}"
+                        data-rumah="{{ iur.warga.no_rumah or '-' }}"
+                        data-bulan="{{ iur.periode_bulan }}"
+                        data-tahun="{{ iur.periode_tahun }}"
+                        data-nominal="{{ iur.jumlah }}"
+                        onclick="handleSingleWaReminder(this)"
                         class="px-2 py-1 rounded bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-700/60 font-semibold text-[11px] transition-colors inline-flex items-center"
                         title="Kirim Pesan WhatsApp Pengingat Iuran">
                   <i class="fa-brands fa-whatsapp text-xs"></i>
@@ -884,6 +890,19 @@
         }, 2000);
       }
     });
+  }
+
+  function handleSingleWaReminder(btn) {
+    if (!btn) return;
+    const nama = btn.getAttribute('data-nama') || '';
+    const noHp = btn.getAttribute('data-hp') || '';
+    const noRumah = btn.getAttribute('data-rumah') || '-';
+    const bulan = parseInt(btn.getAttribute('data-bulan') || '0', 10);
+    const tahun = parseInt(btn.getAttribute('data-tahun') || '2026', 10);
+    const nominal = parseFloat(btn.getAttribute('data-nominal') || '0');
+    sendSingleWaReminder(nama, noHp, noRumah, bulan, tahun, nominal);
+  }
+
   // -------------------------------------------------------------
   // WHATSAPP REMINDER NOTIFICATION GENERATOR
   // -------------------------------------------------------------
