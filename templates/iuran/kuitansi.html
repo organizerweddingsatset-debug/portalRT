@@ -497,7 +497,18 @@
       <tr>
         <td class="lbl">Periode Tagihan</td>
         <td class="colon">:</td>
-        <td class="val"><strong style="color: #4338ca;">Bulan {{ iur.periode_bulan }} / Tahun {{ iur.periode_tahun }}</strong></td>
+        <td class="val">
+          {% if batch_items and batch_items|length > 1 %}
+            <strong style="color: #4338ca;">{{ batch_items|length }} Bulan Sekaligus:</strong>
+            <span style="font-size: 12.5px; color: #1e293b; display: inline-block; margin-left: 4px;">
+              {% for b in batch_items %}
+                Bulan {{ b.periode_bulan }}/{{ b.periode_tahun }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+            </span>
+          {% else %}
+            <strong style="color: #4338ca;">Bulan {{ iur.periode_bulan }} / Tahun {{ iur.periode_tahun }}</strong>
+          {% endif %}
+        </td>
       </tr>
       <tr>
         <td class="lbl">Metode Pembayaran</td>
@@ -525,8 +536,8 @@
 
     <!-- Total Nominal Highlight -->
     <div class="nominal-badge-card">
-      <div class="nominal-badge-lbl">JUMLAH NOMINAL PEMBAYARAN:</div>
-      <div class="nominal-badge-amt">Rp {{ "{:,.0f}".format(iur.jumlah).replace(',', '.') }}</div>
+      <div class="nominal-badge-lbl">JUMLAH NOMINAL PEMBAYARAN{% if batch_items and batch_items|length > 1 %} (TOTAL {{ batch_items|length }} BULAN){% endif %}:</div>
+      <div class="nominal-badge-amt">Rp {{ "{:,.0f}".format(total_jumlah if total_jumlah else iur.jumlah).replace(',', '.') }}</div>
     </div>
 
     <!-- Footer: QR Verification & Dual Authentic Signatures -->

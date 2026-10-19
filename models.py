@@ -227,7 +227,8 @@ class Iuran(BaseModel):
     verified_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Integrasi Payment Gateway Mayar.id
+    # Integrasi Payment Gateway Mayar.id & Batch Payment
+    kode_pembayaran = db.Column(db.String(50), nullable=True, index=True) # ID grup pembayaran batch jika bayar beberapa bulan sekaligus
     mayar_invoice_id = db.Column(db.String(100), nullable=True, index=True)
     mayar_transaction_id = db.Column(db.String(100), nullable=True, index=True)
     mayar_payment_url = db.Column(db.String(255), nullable=True)
@@ -385,12 +386,16 @@ class Pengaturan(BaseModel):
 
     @classmethod
     def set(cls, key, value, kategori='umum', deskripsi=None):
-        setting = cls.query.filter_by(kunci=key).first()
-        if not setting:
-            setting = cls(kunci=key, nilai=str(value), kategori=kategori, deskripsi=deskripsi)
-            db.session.add(setting)
-        else:
-            setting.nilai = str(value)
-            if deskripsi:
-                setting.deskripsi = deskripsi
-        db.session.commit()
+        try:
+            setting = cls.query.filter_by(kunci=key).first()
+            if not setting:
+                setting = cls(kunci=key, nilai=str(value), kategori=kategori, deskripsi=deskripsi)
+                db.session.add(setting)
+            else:
+                setting.nilai = str(value)
+                if deskripsi:
+                    setting.deskripsi = deskripsi
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise

@@ -173,6 +173,11 @@
       <table class="w-full text-left text-xs text-slate-300">
         <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px] border-b border-[#1f2a4a]">
           <tr>
+            <th class="py-3 px-3 text-center w-10">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"
+                     class="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-0 cursor-pointer"
+                     title="Pilih Semua Tagihan Belum Lunas">
+            </th>
             <th class="py-3 px-4">Warga / NIK</th>
             <th class="py-3 px-4">No. Rumah</th>
             <th class="py-3 px-4">Periode</th>
@@ -185,6 +190,20 @@
         <tbody class="divide-y divide-[#1b2440]">
           {% for iur in iuran_list %}
           <tr class="hover:bg-[#18213e]/60 transition-colors">
+            <td class="py-3 px-3 text-center">
+              {% if iur.status != 'Lunas' %}
+              <input type="checkbox" 
+                     class="iuran-row-check w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-0 cursor-pointer"
+                     value="{{ iur.id }}"
+                     data-warga-id="{{ iur.warga_id }}"
+                     data-warga-nama="{{ iur.warga.nama }}"
+                     data-periode="Bulan {{ iur.periode_bulan }}/{{ iur.periode_tahun }}"
+                     data-nominal="{{ iur.jumlah }}"
+                     onchange="updateBatchSelectionBar()">
+              {% else %}
+              <span class="text-emerald-500/60" title="Sudah Lunas"><i class="fa-solid fa-check text-xs"></i></span>
+              {% endif %}
+            </td>
             <td class="py-3 px-4">
               <div class="font-bold text-white">{{ iur.warga.nama }}</div>
               <div class="text-[11px] text-slate-400 font-mono">NIK: {{ iur.warga.nik }}</div>
@@ -422,6 +441,138 @@
   </div>
 </div>
 
+<!-- Floating Batch Action Bar (Sticky at Bottom) -->
+<div id="batchActionBar" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden transition-all duration-300">
+  <div class="bg-[#121933]/95 backdrop-blur-md border border-indigo-500/50 shadow-2xl rounded-2xl px-5 py-3.5 flex flex-wrap items-center gap-4 text-xs text-white">
+    <div class="flex items-center space-x-2.5">
+      <span class="w-7 h-7 rounded-full bg-indigo-600 font-extrabold flex items-center justify-center text-xs text-white shadow" id="batchCountBadge">0</span>
+      <div>
+        <div class="font-bold text-slate-100 flex items-center gap-1.5">
+          <span id="batchCountText">0 Bulan Terpilih</span>
+          <span class="text-slate-400 font-normal" id="batchWargaText">• Warga: -</span>
+        </div>
+        <div class="text-[11px] text-slate-300">
+          Total Tagihan: <strong class="text-emerald-400 text-sm font-mono font-bold" id="batchTotalText">Rp 0</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-6 w-[1px] bg-slate-700/60 hidden sm:block"></div>
+
+    <div class="flex items-center space-x-2">
+      <button type="button" onclick="openBatchBayarModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5 transition-all">
+        <i class="fa-solid fa-receipt"></i>
+        <span>Bayar Sekaligus</span>
+      </button>
+
+      {% if current_user and current_user.is_admin() %}
+      <button type="button" onclick="submitBatchVerifikasi()" class="px-3.5 py-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-600/20 flex items-center space-x-1.5 transition-all" title="Langsung tandai lunas seluruh tagihan terpilih">
+        <i class="fa-solid fa-check-double"></i>
+        <span>Set Lunas Terpilih</span>
+      </button>
+      {% endif %}
+
+      <button type="button" onclick="clearBatchSelection()" class="px-2.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors" title="Batalkan Pilihan">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bayar Batch Sekaligus -->
+<div id="batchBayarModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden p-4">
+  <div class="bg-[#121933] border border-[#2b3964] rounded-2xl w-full max-w-lg p-6 shadow-2xl text-slate-200 relative max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-3 border-b border-[#1f2a4a]">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-sm">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-white text-base">Bayar Iuran Sekaligus (Multi-Bulan)</h3>
+          <p class="text-[11px] text-slate-400">Pembayaran satu kali untuk beberapa periode bulan tagihan</p>
+        </div>
+      </div>
+      <button type="button" onclick="document.getElementById('batchBayarModal').classList.add('hidden')" class="text-slate-400 hover:text-white text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <form id="formBatchBayar" method="POST" action="{{ url_for('iuran_bayar_batch') }}" enctype="multipart/form-data" class="space-y-4 pt-4 text-xs">
+      <!-- Input hidden ID iuran terpilih -->
+      <div id="batchHiddenInputsContainer"></div>
+
+      <!-- Ringkasan Warga & Periode -->
+      <div class="bg-[#0b1021] border border-[#1d2746] rounded-xl p-3.5 space-y-2">
+        <div class="flex justify-between items-center text-slate-300">
+          <span class="text-slate-400">Atas Nama Warga:</span>
+          <strong class="text-white text-sm" id="modalBatchWargaNama">-</strong>
+        </div>
+
+        <div>
+          <span class="text-slate-400 block mb-1.5">Periode Bulan yang Dibayar (<span id="modalBatchCountPill">0</span> bulan):</span>
+          <div id="modalBatchChipsContainer" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto py-1">
+            <!-- Chips rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="border-t border-[#1a2340] pt-2 flex justify-between items-baseline">
+          <span class="text-slate-300 font-medium">Total Tagihan Keseluruhan:</span>
+          <span class="text-emerald-400 font-mono text-lg font-extrabold" id="modalBatchTotalDisplay">Rp 0</span>
+        </div>
+      </div>
+
+      <!-- Metode Pembayaran -->
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Pilih Metode Pembayaran</label>
+        <select name="metode_bayar" id="modalBatchMetodeBayar" onchange="onBatchMetodeChange(this.value)" class="dark-input py-2">
+          {% if current_user and current_user.is_admin() %}
+          <option value="Tunai / Cash" selected>Tunai / Cash (Diterima Langsung oleh Pengurus RT)</option>
+          {% endif %}
+          <option value="Transfer Bank" {% if not current_user or not current_user.is_admin() %}selected{% endif %}>Transfer Bank (Rekening Kas Paguyuban RT 09)</option>
+          <option value="QRIS">QRIS Statis Kas RT (Scan via m-Banking / e-Wallet)</option>
+          {% if get_setting('mayar_is_active') == '1' %}
+          <option value="Mayar.id">Mayar.id (QRIS Otomatis Dinamis / Multi-Channel)</option>
+          {% endif %}
+        </select>
+      </div>
+
+      <!-- Info Rekening Bank RT -->
+      <div id="modalBatchBankInfo" class="bg-indigo-950/30 border border-indigo-900/50 rounded-lg p-2.5 text-[11px] text-indigo-300">
+        <div class="font-bold mb-0.5">Rekening Kas RT: {{ get_setting('bank_nama') }}</div>
+        <div>No. Rekening: <span class="font-mono font-bold text-white">{{ get_setting('bank_rekening') }}</span> a.n. {{ get_setting('bank_atas_nama') }}</div>
+      </div>
+
+      <!-- Upload Bukti Transfer -->
+      <div id="modalBatchBuktiWrapper">
+        <label class="block text-xs font-medium text-slate-300 mb-1">Unggah 1 Foto Bukti Transfer / Struk Pembayaran</label>
+        <input type="file" name="bukti_transfer" id="modalBatchBuktiInput" accept="image/*" class="dark-input py-1.5 text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-indigo-600 file:text-white">
+        <p class="text-[10px] text-slate-400 mt-1">Cukup unggah 1 lembar bukti transfer untuk mencakup seluruh bulan yang dipilih.</p>
+      </div>
+
+      <!-- Catatan -->
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Catatan Tambahan (Opsional)</label>
+        <textarea name="catatan" rows="2" placeholder="Contoh: Pembayaran iuran semester 1 / lunas via BCA..." class="dark-input"></textarea>
+      </div>
+
+      <div class="pt-3 flex items-center justify-end space-x-2">
+        <button type="button" onclick="document.getElementById('batchBayarModal').classList.add('hidden')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e]">
+          Batal
+        </button>
+        <button type="submit" id="modalBatchSubmitBtn" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md flex items-center space-x-1.5">
+          <i class="fa-solid fa-check"></i>
+          <span id="modalBatchSubmitLabel">Konfirmasi &amp; Bayar</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hidden Form untuk Verifikasi Batch Admin -->
+<form id="formBatchVerifikasi" method="POST" action="{{ url_for('iuran_verifikasi_batch') }}" class="hidden">
+  <div id="batchVerifikasiInputs"></div>
+</form>
+
 <script>
   function handleOpenBayar(btn) {
     if (!btn) return;
@@ -442,6 +593,174 @@
       btnMayar.href = '/iuran/mayar/create/' + id;
     }
     document.getElementById('bayarModal').classList.remove('hidden');
+  }
+
+  // -------------------------------------------------------------
+  // MULTI-MONTH BATCH PAYMENT LOGIC
+  // -------------------------------------------------------------
+  function getSelectedRows() {
+    const checkboxes = document.querySelectorAll('.iuran-row-check:checked');
+    const rows = [];
+    checkboxes.forEach(cb => {
+      rows.push({
+        id: cb.value,
+        wargaId: cb.getAttribute('data-warga-id'),
+        wargaNama: cb.getAttribute('data-warga-nama'),
+        periode: cb.getAttribute('data-periode'),
+        nominal: parseFloat(cb.getAttribute('data-nominal') || '0')
+      });
+    });
+    return rows;
+  }
+
+  function toggleSelectAll(masterCb) {
+    const checkboxes = document.querySelectorAll('.iuran-row-check');
+    checkboxes.forEach(cb => {
+      cb.checked = masterCb.checked;
+    });
+    updateBatchSelectionBar();
+  }
+
+  function updateBatchSelectionBar() {
+    const selected = getSelectedRows();
+    const bar = document.getElementById('batchActionBar');
+    if (!bar) return;
+
+    if (selected.length === 0) {
+      bar.classList.add('hidden');
+      const masterCb = document.getElementById('selectAllCheckbox');
+      if (masterCb) masterCb.checked = false;
+      return;
+    }
+
+    bar.classList.remove('hidden');
+    document.getElementById('batchCountBadge').textContent = selected.length;
+    document.getElementById('batchCountText').textContent = selected.length + ' Bulan Terpilih';
+
+    const uniqueWarga = [...new Set(selected.map(r => r.wargaNama))];
+    const wargaTextEl = document.getElementById('batchWargaText');
+    if (uniqueWarga.length === 1) {
+      wargaTextEl.textContent = '• Warga: ' + uniqueWarga[0];
+    } else {
+      wargaTextEl.textContent = '• ' + uniqueWarga.length + ' Warga Berbeda';
+    }
+
+    const totalNominal = selected.reduce((acc, curr) => acc + curr.nominal, 0);
+    document.getElementById('batchTotalText').textContent = 'Rp ' + totalNominal.toLocaleString('id-ID');
+  }
+
+  function clearBatchSelection() {
+    document.querySelectorAll('.iuran-row-check').forEach(cb => cb.checked = false);
+    const master = document.getElementById('selectAllCheckbox');
+    if (master) master.checked = false;
+    updateBatchSelectionBar();
+  }
+
+  function openBatchBayarModal() {
+    const selected = getSelectedRows();
+    if (selected.length === 0) {
+      alert('Pilih minimal satu tagihan iuran yang ingin dibayar.');
+      return;
+    }
+
+    const uniqueWarga = [...new Set(selected.map(r => r.wargaNama))];
+    if (uniqueWarga.length > 1) {
+      const confirmDiff = confirm('Tagihan yang dipilih berasal dari ' + uniqueWarga.length + ' warga berbeda. Pembayaran batch direkomendasikan per warga/keluarga. Lanjutkan tetap memproses?');
+      if (!confirmDiff) return;
+    }
+
+    // Set nama warga & total
+    document.getElementById('modalBatchWargaNama').textContent = uniqueWarga.join(', ');
+    const totalNominal = selected.reduce((acc, curr) => acc + curr.nominal, 0);
+    document.getElementById('modalBatchTotalDisplay').textContent = 'Rp ' + totalNominal.toLocaleString('id-ID');
+    document.getElementById('modalBatchCountPill').textContent = selected.length;
+    document.getElementById('modalBatchSubmitLabel').textContent = 'Konfirmasi & Bayar ' + selected.length + ' Bulan (Rp ' + totalNominal.toLocaleString('id-ID') + ')';
+
+    // Render chips periode
+    const chipsContainer = document.getElementById('modalBatchChipsContainer');
+    chipsContainer.innerHTML = '';
+    selected.forEach(r => {
+      const chip = document.createElement('span');
+      chip.className = 'px-2 py-0.5 rounded-md bg-indigo-950/70 border border-indigo-700/60 text-indigo-200 text-[11px] font-mono flex items-center gap-1';
+      chip.innerHTML = '<i class="fa-regular fa-calendar-check text-[9px] text-indigo-400"></i> ' + r.periode;
+      chipsContainer.appendChild(chip);
+    });
+
+    // Populate hidden inputs
+    const inputsContainer = document.getElementById('batchHiddenInputsContainer');
+    inputsContainer.innerHTML = '';
+    selected.forEach(r => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'iuran_ids';
+      inp.value = r.id;
+      inputsContainer.appendChild(inp);
+    });
+
+    // Trigger form action check
+    const selectMetode = document.getElementById('modalBatchMetodeBayar');
+    if (selectMetode) {
+      onBatchMetodeChange(selectMetode.value);
+    }
+
+    document.getElementById('batchBayarModal').classList.remove('hidden');
+  }
+
+  function onBatchMetodeChange(val) {
+    const form = document.getElementById('formBatchBayar');
+    const buktiWrapper = document.getElementById('modalBatchBuktiWrapper');
+    const bankInfo = document.getElementById('modalBatchBankInfo');
+    const submitBtn = document.getElementById('modalBatchSubmitBtn');
+
+    if (val === 'Mayar.id') {
+      form.action = "{{ url_for('iuran_mayar_create_batch') }}";
+      if (buktiWrapper) buktiWrapper.classList.add('hidden');
+      if (bankInfo) bankInfo.classList.add('hidden');
+      if (submitBtn) {
+        submitBtn.className = 'px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md flex items-center space-x-1.5';
+      }
+    } else {
+      form.action = "{{ url_for('iuran_bayar_batch') }}";
+      if (buktiWrapper) {
+        if (val === 'Tunai / Cash') {
+          buktiWrapper.classList.add('hidden');
+        } else {
+          buktiWrapper.classList.remove('hidden');
+        }
+      }
+      if (bankInfo) {
+        if (val === 'Transfer Bank') bankInfo.classList.remove('hidden');
+        else bankInfo.classList.add('hidden');
+      }
+      if (submitBtn) {
+        submitBtn.className = 'px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md flex items-center space-x-1.5';
+      }
+    }
+  }
+
+  function submitBatchVerifikasi() {
+    const selected = getSelectedRows();
+    if (selected.length === 0) {
+      alert('Pilih minimal satu tagihan iuran untuk diverifikasi.');
+      return;
+    }
+
+    const totalNominal = selected.reduce((acc, curr) => acc + curr.nominal, 0);
+    const confirmed = confirm('Tandai LUNAS sekaligus ' + selected.length + ' tagihan terpilih senilai Rp ' + totalNominal.toLocaleString('id-ID') + '?');
+    if (!confirmed) return;
+
+    const form = document.getElementById('formBatchVerifikasi');
+    const container = document.getElementById('batchVerifikasiInputs');
+    container.innerHTML = '';
+    selected.forEach(r => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'iuran_ids';
+      inp.value = r.id;
+      container.appendChild(inp);
+    });
+
+    form.submit();
   }
 
   function getQrisPayloadString() {

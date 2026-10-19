@@ -49,6 +49,8 @@ def check_and_upgrade_db():
                     conn.execute(text("ALTER TABLE iuran ADD COLUMN mayar_payment_url VARCHAR(255)"))
                 if 'verified_at' not in cols:
                     conn.execute(text("ALTER TABLE iuran ADD COLUMN verified_at DATETIME"))
+                if 'kode_pembayaran' not in cols:
+                    conn.execute(text("ALTER TABLE iuran ADD COLUMN kode_pembayaran VARCHAR(50)"))
                 conn.commit()
         except Exception:
             pass
@@ -1099,6 +1101,157 @@ def iuran_verifikasi(id):
     flash(f'Iuran warga {iur.warga.nama} periode {iur.periode_bulan}/{iur.periode_tahun} diverifikasi LUNAS.', 'success')
     return redirect(url_for('iuran_index'))
 
+@app.route('/iuran/bayar-batch', methods=['POST'])
+@login_required
+def iuran_bayar_batch():
+    user = get_current_user()
+    
+    # Ambil list ID iuran yang dipilih
+    raw_ids = request.form.getlist('iuran_ids')
+    if not raw_ids and request.form.get('batch_iuran_ids'):
+        raw_ids = [x.strip() for x in request.form.get('batch_iuran_ids').split(',') if x.strip()]
+    
+    try:
+        iuran_ids = [int(x) for x in raw_ids if str(x).isdigit()]
+    except Exception:
+        iuran_ids = []
+
+    if not iuran_ids:
+        flash('Silakan pilih minimal satu tagihan iuran untuk diproses.', 'warning')
+        return redirect(url_for('iuran_index'))
+
+    # Ambil data iuran dari database
+    iurans = Iuran.query.filter(Iuran.id.in_(iuran_ids)).order_by(Iuran.periode_tahun.asc(), Iuran.periode_bulan.asc()).all()
+    if not iurans:
+        flash('Data tagihan yang dipilih tidak ditemukan.', 'danger')
+        return redirect(url_for('iuran_index'))
+
+    # Hak Akses: warga hanya boleh memproses iuran keluarga sendiri
+    if not user.is_admin():
+        for iur in iurans:
+            if not user.warga_id or user.warga_id != iur.warga_id:
+                flash('Akses ditolak. Anda hanya berhak memproses iuran keluarga Anda sendiri.', 'danger')
+                return redirect(url_for('iuran_index'))
+
+    metode = request.form.get('metode_bayar', 'Transfer Bank')
+    catatan = request.form.get('catatan', '').strip()
+
+    # Upload bukti transfer (berlaku untuk semua baris dalam transaksi sekaligus ini)
+    bukti_filename = None
+    if 'bukti_transfer' in request.files:
+        f = request.files['bukti_transfer']
+        if f and f.filename != '':
+            ext = os.path.splitext(f.filename)[1]
+            fname = f"bukti_batch_{int(datetime.utcnow().timestamp())}{ext}"
+            f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(fname)))
+            bukti_filename = fname
+
+    batch_code = f"BATCH-{datetime.utcnow().strftime('%Y%m%d%H%M')}-{int(datetime.utcnow().timestamp()) % 10000}"
+    total_jumlah = sum(x.jumlah for x in iurans)
+    
+    periode_list = [f"{x.periode_bulan}/{x.periode_tahun}" for x in iurans]
+    periode_ringkas = ", ".join(periode_list) if len(periode_list) <= 4 else f"{periode_list[0]} s/d {periode_list[-1]} ({len(iurans)} Bulan)"
+    first_warga = iurans[0].warga.nama if iurans and iurans[0].warga else "Warga"
+
+    now = datetime.utcnow()
+    if user.is_admin():
+        for iur in iurans:
+            iur.status = 'Lunas'
+            iur.metode_bayar = metode
+            iur.tanggal_bayar = now
+            iur.verified_by = user.nama
+            iur.verified_at = now
+            iur.kode_pembayaran = batch_code
+            if bukti_filename:
+                iur.bukti_transfer = bukti_filename
+            if catatan:
+                iur.catatan = catatan
+
+        # Catat 1 baris Transaksi Kas Gabungan untuk seluruh bulan yang dibayar
+        trx = TransaksiKas(
+            kode_transaksi=f"TRX-IUR-{batch_code}",
+            jenis='Pemasukan',
+            kategori='Iuran Warga',
+            judul=f"Iuran ({len(iurans)} Bulan: {periode_ringkas}) - {first_warga}",
+            jumlah=total_jumlah,
+            tanggal=date.today(),
+            keterangan=f"Pembayaran {len(iurans)} bulan sekaligus via {metode}. Kode: {batch_code}. {catatan}".strip(),
+            iuran_id=iurans[0].id,
+            created_by=user.nama
+        )
+        db.session.add(trx)
+        flash(f'Pembayaran {len(iurans)} bulan iuran ({first_warga}) berhasil dicatat LUNAS. Total: Rp {total_jumlah:,.0f}.', 'success')
+    else:
+        for iur in iurans:
+            iur.status = 'Menunggu Konfirmasi'
+            iur.metode_bayar = metode
+            iur.tanggal_bayar = now
+            iur.kode_pembayaran = batch_code
+            if bukti_filename:
+                iur.bukti_transfer = bukti_filename
+            if catatan:
+                iur.catatan = catatan
+
+        flash(f'Bukti pembayaran {len(iurans)} bulan iuran berhasil dikirim (Total: Rp {total_jumlah:,.0f}). Menunggu verifikasi Bendahara RT.', 'info')
+
+    db.session.commit()
+    return redirect(url_for('iuran_index'))
+
+@app.route('/iuran/verifikasi-batch', methods=['POST'])
+@login_required
+@admin_required
+def iuran_verifikasi_batch():
+    user = get_current_user()
+    raw_ids = request.form.getlist('iuran_ids')
+    if not raw_ids and request.form.get('batch_iuran_ids'):
+        raw_ids = [x.strip() for x in request.form.get('batch_iuran_ids').split(',') if x.strip()]
+
+    try:
+        iuran_ids = [int(x) for x in raw_ids if str(x).isdigit()]
+    except Exception:
+        iuran_ids = []
+
+    if not iuran_ids:
+        flash('Silakan pilih minimal satu tagihan iuran untuk diverifikasi.', 'warning')
+        return redirect(url_for('iuran_index'))
+
+    iurans = Iuran.query.filter(Iuran.id.in_(iuran_ids), Iuran.status != 'Lunas').all()
+    if not iurans:
+        flash('Tidak ada tagihan tertunda yang perlu diverifikasi pada pilihan Anda.', 'info')
+        return redirect(url_for('iuran_index'))
+
+    now = datetime.utcnow()
+    count_verified = 0
+    total_nominal = 0
+
+    for iur in iurans:
+        iur.status = 'Lunas'
+        iur.verified_by = user.nama
+        iur.verified_at = now
+        if not iur.tanggal_bayar:
+            iur.tanggal_bayar = now
+        count_verified += 1
+        total_nominal += iur.jumlah
+
+        # Jika belum ada pencatatan kas untuk iuran ini
+        if not TransaksiKas.query.filter_by(iuran_id=iur.id).first():
+            trx = TransaksiKas(
+                kode_transaksi=f"TRX-IUR-{iur.id}-{int(now.timestamp()) % 10000}",
+                jenis='Pemasukan',
+                kategori='Iuran Warga',
+                judul=f"Iuran Bulan {iur.periode_bulan}/{iur.periode_tahun} - {iur.warga.nama}",
+                jumlah=iur.jumlah,
+                tanggal=date.today(),
+                keterangan=f"Verifikasi massal oleh {user.nama}",
+                iuran_id=iur.id,
+                created_by=user.nama
+            )
+            db.session.add(trx)
+
+    db.session.commit()
+    flash(f'Berhasil memverifikasi {count_verified} tagihan iuran menjadi LUNAS (Total: Rp {total_nominal:,.0f}).', 'success')
+    return redirect(url_for('iuran_index'))
+
 @app.route('/iuran/generate', methods=['POST'])
 @login_required
 @admin_required
@@ -1156,8 +1309,20 @@ def iuran_kuitansi(id):
     no_hp_rt = settings.get('no_hp_rt', '0812-3456-7890')
     qris_merchant = settings.get('qris_merchant_name', 'KAS PAGUYUBAN RT 09')
 
-    no_kuitansi = f"KWT/{nama_rt.replace(' ', '')}/{iur.periode_tahun}/{str(iur.periode_bulan).zfill(2)}/{str(iur.id).zfill(4)}"
-    terbilang_str = terbilang_rupiah(iur.jumlah)
+    # Cek apakah bagian dari pembayaran batch sekaligus
+    batch_items = []
+    if iur.kode_pembayaran:
+        batch_items = Iuran.query.filter_by(kode_pembayaran=iur.kode_pembayaran).order_by(Iuran.periode_tahun.asc(), Iuran.periode_bulan.asc()).all()
+    if not batch_items:
+        batch_items = [iur]
+
+    total_jumlah = sum(x.jumlah for x in batch_items)
+    terbilang_str = terbilang_rupiah(total_jumlah)
+
+    if len(batch_items) > 1:
+        no_kuitansi = f"KWT/{nama_rt.replace(' ', '')}/BATCH/{str(iur.id).zfill(4)}"
+    else:
+        no_kuitansi = f"KWT/{nama_rt.replace(' ', '')}/{iur.periode_tahun}/{str(iur.periode_bulan).zfill(2)}/{str(iur.id).zfill(4)}"
 
     # Tanggal cetak & tgl lunas
     tgl_lunas_str = iur.tanggal_bayar.strftime('%d %B %Y') if iur.tanggal_bayar else (iur.verified_at.strftime('%d %B %Y') if iur.verified_at else date.today().strftime('%d %B %Y'))
@@ -1165,6 +1330,8 @@ def iuran_kuitansi(id):
     return render_template(
         'iuran/kuitansi.html',
         iur=iur,
+        batch_items=batch_items,
+        total_jumlah=total_jumlah,
         no_kuitansi=no_kuitansi,
         terbilang=terbilang_str,
         tgl_lunas_str=tgl_lunas_str,
@@ -2093,72 +2260,100 @@ def api_webhook_mayar():
     customer_mobile = str(data.get('customerMobile') or payload.get('customerMobile') or '')
 
     # 4. Pencarian Iuran Terkait (Smart Matching)
-    iur = None
+    iuran_targets = []
 
-    # Match 1: Invoice ID
+    # Match 1: Invoice ID (mendukung single atau batch multi-bulan)
     if invoice_id:
-        iur = Iuran.query.filter_by(mayar_invoice_id=invoice_id).first()
+        iuran_targets = Iuran.query.filter_by(mayar_invoice_id=invoice_id).all()
 
     # Match 2: Transaction ID
-    if not iur and transaction_id:
-        iur = Iuran.query.filter_by(mayar_transaction_id=transaction_id).first()
+    if not iuran_targets and transaction_id:
+        iuran_targets = Iuran.query.filter_by(mayar_transaction_id=transaction_id).all()
 
-    # Match 3: Tag ID di description (e.g. "[ID: #123]" atau "#123")
-    if not iur and description:
-        match = re.search(r'#(\d+)', description)
-        if match:
+    # Match 3: Tag ID di description (e.g. "[Batch: 1,2,3]" atau "[ID: #123]" atau "#123")
+    if not iuran_targets and description:
+        batch_match = re.search(r'\[Batch:\s*([\d, ]+)\]', description)
+        if batch_match:
             try:
-                candidate_id = int(match.group(1))
-                iur = db.session.get(Iuran, candidate_id)
+                b_ids = [int(x.strip()) for x in batch_match.group(1).split(',') if x.strip().isdigit()]
+                iuran_targets = Iuran.query.filter(Iuran.id.in_(b_ids)).all()
             except Exception:
                 pass
 
+        if not iuran_targets:
+            match = re.search(r'#(\d+)', description)
+            if match:
+                try:
+                    candidate_id = int(match.group(1))
+                    candidate_iur = db.session.get(Iuran, candidate_id)
+                    if candidate_iur:
+                        iuran_targets = [candidate_iur]
+                except Exception:
+                    pass
+
     # Match 4: Nomor HP Warga (cari tagihan belum lunas)
-    if not iur and customer_mobile:
+    if not iuran_targets and customer_mobile:
         clean_mobile = ''.join(filter(str.isdigit, customer_mobile))
         if clean_mobile.startswith('62'):
             clean_mobile = '0' + clean_mobile[2:]
         if len(clean_mobile) >= 8:
             warga = Warga.query.filter(Warga.no_hp.like(f"%{clean_mobile[-8:]}%")).first()
             if warga:
-                iur = Iuran.query.filter_by(warga_id=warga.id, status='Belum Lunas').order_by(
+                candidate_iur = Iuran.query.filter_by(warga_id=warga.id, status='Belum Lunas').order_by(
                     Iuran.periode_tahun.asc(), Iuran.periode_bulan.asc()
                 ).first()
+                if candidate_iur:
+                    iuran_targets = [candidate_iur]
 
     # 5. Eksekusi Pelunasan
-    if iur:
-        if iur.status == 'Lunas':
+    if iuran_targets:
+        first_iur = iuran_targets[0]
+        all_lunas = all(x.status == 'Lunas' for x in iuran_targets)
+        if all_lunas:
             return jsonify({
                 'status': 'success',
-                'message': f'Iuran ID #{iur.id} warga {iur.warga.nama} sudah lunas sebelumnya.',
-                'iuran_id': iur.id,
+                'message': f'Iuran ID #{first_iur.id} warga {first_iur.warga.nama} sudah lunas sebelumnya.',
+                'iuran_id': first_iur.id,
                 'already_settled': True
             }), 200
 
-        iur.status = 'Lunas'
-        iur.metode_bayar = f"QRIS (Mayar - {payment_method})"
-        iur.tanggal_bayar = datetime.utcnow()
-        iur.verified_by = 'Sistem Webhook Mayar'
-        iur.verified_at = datetime.utcnow()
-        if transaction_id:
-            iur.mayar_transaction_id = transaction_id
-        if invoice_id:
-            iur.mayar_invoice_id = invoice_id
-        iur.catatan = f"Otomatis diverifikasi webhook Mayar.id | Trx: {transaction_id or '-'} | Inv: {invoice_id or '-'}"
+        now = datetime.utcnow()
+        for target in iuran_targets:
+            target.status = 'Lunas'
+            target.metode_bayar = f"QRIS (Mayar - {payment_method})"
+            target.tanggal_bayar = now
+            target.verified_by = 'Sistem Webhook Mayar'
+            target.verified_at = now
+            if transaction_id:
+                target.mayar_transaction_id = transaction_id
+            if invoice_id:
+                target.mayar_invoice_id = invoice_id
+            target.catatan = f"Otomatis diverifikasi webhook Mayar.id | Trx: {transaction_id or '-'} | Inv: {invoice_id or '-'}"
 
         # Otomatis catat ke Transaksi Kas RT jika belum ada
-        existing_trx = TransaksiKas.query.filter_by(iuran_id=iur.id).first()
+        existing_trx = None
+        for target in iuran_targets:
+            existing_trx = TransaksiKas.query.filter_by(iuran_id=target.id).first()
+            if existing_trx:
+                break
+
         if not existing_trx:
-            nominal = float(amount_paid) if amount_paid else iur.jumlah
+            total_nominal = sum(x.jumlah for x in iuran_targets)
+            nominal = float(amount_paid) if amount_paid else total_nominal
+            if len(iuran_targets) > 1:
+                periode_str = f"{len(iuran_targets)} Bulan ({first_iur.periode_bulan}/{first_iur.periode_tahun} s/d {iuran_targets[-1].periode_bulan}/{iuran_targets[-1].periode_tahun})"
+            else:
+                periode_str = f"Bulan {first_iur.periode_bulan}/{first_iur.periode_tahun}"
+
             trx = TransaksiKas(
-                kode_transaksi=f"TRX-MAYAR-{iur.id}-{int(datetime.utcnow().timestamp()) % 100000}",
+                kode_transaksi=f"TRX-MAYAR-{first_iur.id}-{int(now.timestamp()) % 100000}",
                 jenis='Pemasukan',
                 kategori='Iuran Warga',
-                judul=f"Iuran Bulan {iur.periode_bulan}/{iur.periode_tahun} - {iur.warga.nama}",
+                judul=f"Iuran {periode_str} - {first_iur.warga.nama}",
                 jumlah=nominal,
                 tanggal=date.today(),
                 keterangan=f"Pembayaran otomatis QRIS via Webhook Mayar ({payment_method}). ID Trx: {transaction_id or '-'}",
-                iuran_id=iur.id,
+                iuran_id=first_iur.id,
                 created_by='Sistem Webhook Mayar'
             )
             db.session.add(trx)
@@ -2167,11 +2362,12 @@ def api_webhook_mayar():
 
         return jsonify({
             'status': 'success',
-            'message': f'Iuran warga {iur.warga.nama} periode {iur.periode_bulan}/{iur.periode_tahun} berhasil diverifikasi Lunas via Mayar.',
-            'iuran_id': iur.id,
-            'warga': iur.warga.nama,
-            'nominal': iur.jumlah,
-            'metode': iur.metode_bayar
+            'message': f'Iuran warga {first_iur.warga.nama} periode {first_iur.periode_bulan}/{first_iur.periode_tahun} berhasil diverifikasi Lunas via Mayar.',
+            'iuran_id': first_iur.id,
+            'count': len(iuran_targets),
+            'warga': first_iur.warga.nama,
+            'nominal': sum(x.jumlah for x in iuran_targets),
+            'metode': first_iur.metode_bayar
         }), 200
 
     return jsonify({
@@ -2246,6 +2442,109 @@ def iuran_mayar_create(id):
             if payment_link:
                 iur.mayar_invoice_id = str(inv_id)
                 iur.mayar_payment_url = payment_link
+                db.session.commit()
+                return redirect(payment_link)
+            else:
+                flash('Respon Mayar tidak menyertakan link pembayaran. Silakan coba lagi.', 'danger')
+                return redirect(url_for('iuran_index'))
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode('utf-8', errors='replace')
+        flash(f'Gagal menghubungi API Mayar ({e.code}): {err_msg}', 'danger')
+        return redirect(url_for('iuran_index'))
+    except Exception as e:
+        flash(f'Terjadi kendala koneksi ke server Mayar: {str(e)}', 'danger')
+        return redirect(url_for('iuran_index'))
+
+@app.route('/iuran/mayar/create-batch', methods=['POST'])
+@login_required
+def iuran_mayar_create_batch():
+    """
+    Membuat tautan pembayaran online Mayar.id untuk beberapa bulan iuran sekaligus.
+    """
+    user = get_current_user()
+    raw_ids = request.form.getlist('iuran_ids')
+    if not raw_ids and request.form.get('batch_iuran_ids'):
+        raw_ids = [x.strip() for x in request.form.get('batch_iuran_ids').split(',') if x.strip()]
+
+    try:
+        iuran_ids = [int(x) for x in raw_ids if str(x).isdigit()]
+    except Exception:
+        iuran_ids = []
+
+    if not iuran_ids:
+        flash('Silakan pilih minimal satu tagihan iuran untuk pembayaran online.', 'warning')
+        return redirect(url_for('iuran_index'))
+
+    iurans = Iuran.query.filter(Iuran.id.in_(iuran_ids)).order_by(Iuran.periode_tahun.asc(), Iuran.periode_bulan.asc()).all()
+    if not iurans:
+        flash('Data tagihan yang dipilih tidak ditemukan.', 'danger')
+        return redirect(url_for('iuran_index'))
+
+    # Hak Akses
+    if not user.is_admin():
+        for iur in iurans:
+            if not user.warga_id or user.warga_id != iur.warga_id:
+                flash('Akses ditolak. Anda hanya berhak membayar tagihan iuran keluarga Anda.', 'danger')
+                return redirect(url_for('iuran_index'))
+
+    unpaid = [x for x in iurans if x.status != 'Lunas']
+    if not unpaid:
+        flash('Seluruh tagihan yang dipilih sudah berstatus LUNAS.', 'info')
+        return redirect(url_for('iuran_index'))
+
+    api_key = Pengaturan.get('mayar_api_key', '').strip()
+    env = Pengaturan.get('mayar_environment', 'sandbox').strip().lower()
+    base_url = "https://api.mayar.id" if env == 'production' else "https://api.mayar.io"
+
+    if not api_key:
+        flash('Integrasi Mayar belum dikonfigurasi dengan API Key. Silakan gunakan metode transfer atau hubungi pengurus.', 'warning')
+        return redirect(url_for('iuran_index'))
+
+    total_amount = int(sum(x.jumlah for x in unpaid))
+    first_warga = unpaid[0].warga
+    batch_ids_str = ",".join(str(x.id) for x in unpaid)
+    batch_code = f"BATCH-{datetime.utcnow().strftime('%Y%m%d%H%M')}-{int(datetime.utcnow().timestamp()) % 10000}"
+
+    if len(unpaid) > 1:
+        periode_desc = f"{len(unpaid)} Bulan ({unpaid[0].periode_bulan}/{unpaid[0].periode_tahun} s/d {unpaid[-1].periode_bulan}/{unpaid[-1].periode_tahun})"
+    else:
+        periode_desc = f"Bulan {unpaid[0].periode_bulan}/{unpaid[0].periode_tahun}"
+
+    endpoint = f"{base_url}/hl/v1/payment/create"
+    redirect_url = request.host_url.rstrip('/') + url_for('iuran_index')
+    payload_data = {
+        "name": first_warga.nama,
+        "email": first_warga.email or f"warga{first_warga.id}@portalrt.id",
+        "mobile": first_warga.no_hp or "081234567890",
+        "amount": total_amount,
+        "description": f"Iuran Paguyuban RT 09 [{periode_desc}] - {first_warga.nama} [Batch: {batch_ids_str}]",
+        "redirectUrl": redirect_url
+    }
+
+    req = urllib.request.Request(
+        endpoint,
+        data=json.dumps(payload_data).encode('utf-8'),
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'PortalRT-Mayar-Client/1.0'
+        },
+        method='POST'
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as response:
+            res_body = json.loads(response.read().decode('utf-8'))
+            data = res_body.get('data', {})
+            inv_id = data.get('id') or data.get('transactionId')
+            payment_link = data.get('link') or data.get('url')
+
+            if payment_link:
+                for iur in unpaid:
+                    iur.kode_pembayaran = batch_code
+                    iur.mayar_invoice_id = str(inv_id)
+                    iur.mayar_payment_url = payment_link
                 db.session.commit()
                 return redirect(payment_link)
             else:
