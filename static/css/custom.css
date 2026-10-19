@@ -226,6 +226,16 @@ body {
   color: #475569;
 }
 
+/* Floating Batch Action Bar */
+#batchActionBar {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
 /* Print Stylesheet for Official Letters & Receipts */
 @media print {
   body {
@@ -233,7 +243,7 @@ body {
     color: #000000 !important;
     font-family: 'Times New Roman', Times, serif !important;
   }
-  .no-print {
+  .no-print, #batchActionBar {
     display: none !important;
   }
   .print-only {

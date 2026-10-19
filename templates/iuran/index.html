@@ -199,7 +199,8 @@
                      data-warga-nama="{{ iur.warga.nama }}"
                      data-periode="Bulan {{ iur.periode_bulan }}/{{ iur.periode_tahun }}"
                      data-nominal="{{ iur.jumlah }}"
-                     onchange="updateBatchSelectionBar()">
+                     onchange="updateBatchSelectionBar()"
+                     onclick="updateBatchSelectionBar()">
               {% else %}
               <span class="text-emerald-500/60" title="Sudah Lunas"><i class="fa-solid fa-check text-xs"></i></span>
               {% endif %}
@@ -442,37 +443,40 @@
 </div>
 
 <!-- Floating Batch Action Bar (Sticky at Bottom) -->
-<div id="batchActionBar" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden transition-all duration-300">
-  <div class="bg-[#121933]/95 backdrop-blur-md border border-indigo-500/50 shadow-2xl rounded-2xl px-5 py-3.5 flex flex-wrap items-center gap-4 text-xs text-white">
-    <div class="flex items-center space-x-2.5">
-      <span class="w-7 h-7 rounded-full bg-indigo-600 font-extrabold flex items-center justify-center text-xs text-white shadow" id="batchCountBadge">0</span>
+<div id="batchActionBar" 
+     style="position: fixed !important; bottom: 24px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 99999 !important; pointer-events: auto !important; max-width: 95vw !important; width: max-content !important; display: none;"
+     class="transition-all duration-300">
+  <div style="background-color: #121933; border: 1.5px solid #6366f1; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9), 0 0 25px rgba(99, 102, 241, 0.45); border-radius: 16px; padding: 12px 20px; display: flex; align-items: center; gap: 16px; color: #ffffff;"
+       class="flex-wrap">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="width: 28px; height: 28px; border-radius: 9999px; background-color: #4f46e5; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #ffffff; flex-shrink: 0;" id="batchCountBadge">0</span>
       <div>
-        <div class="font-bold text-slate-100 flex items-center gap-1.5">
+        <div style="font-weight: 700; color: #f1f5f9; display: flex; align-items: center; gap: 6px; font-size: 13px;">
           <span id="batchCountText">0 Bulan Terpilih</span>
-          <span class="text-slate-400 font-normal" id="batchWargaText">• Warga: -</span>
+          <span style="color: #94a3b8; font-weight: 400; font-size: 12px;" id="batchWargaText">• Warga: -</span>
         </div>
-        <div class="text-[11px] text-slate-300">
-          Total Tagihan: <strong class="text-emerald-400 text-sm font-mono font-bold" id="batchTotalText">Rp 0</strong>
+        <div style="font-size: 11px; color: #cbd5e1;">
+          Total Tagihan: <strong style="color: #34d399; font-size: 14px; font-family: monospace; font-weight: 700;" id="batchTotalText">Rp 0</strong>
         </div>
       </div>
     </div>
 
-    <div class="h-6 w-[1px] bg-slate-700/60 hidden sm:block"></div>
+    <div style="height: 24px; width: 1px; background-color: rgba(100, 116, 139, 0.4);" class="hidden sm:block"></div>
 
-    <div class="flex items-center space-x-2">
-      <button type="button" onclick="openBatchBayarModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5 transition-all">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button type="button" onclick="openBatchBayarModal()" style="padding: 8px 16px; border-radius: 10px; background: linear-gradient(to right, #4f46e5, #6366f1); color: #ffffff; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);">
         <i class="fa-solid fa-receipt"></i>
         <span>Bayar Sekaligus</span>
       </button>
 
       {% if current_user and current_user.is_admin() %}
-      <button type="button" onclick="submitBatchVerifikasi()" class="px-3.5 py-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-600/20 flex items-center space-x-1.5 transition-all" title="Langsung tandai lunas seluruh tagihan terpilih">
+      <button type="button" onclick="submitBatchVerifikasi()" style="padding: 8px 14px; border-radius: 10px; background-color: #059669; color: #ffffff; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);" title="Langsung tandai lunas seluruh tagihan terpilih">
         <i class="fa-solid fa-check-double"></i>
         <span>Set Lunas Terpilih</span>
       </button>
       {% endif %}
 
-      <button type="button" onclick="clearBatchSelection()" class="px-2.5 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors" title="Batalkan Pilihan">
+      <button type="button" onclick="clearBatchSelection()" style="padding: 8px 10px; border-radius: 10px; background: transparent; color: #94a3b8; border: none; cursor: pointer; font-size: 14px;" title="Batalkan Pilihan">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
@@ -627,6 +631,8 @@
     if (!bar) return;
 
     if (selected.length === 0) {
+      bar.style.display = 'none';
+      bar.style.setProperty('display', 'none', 'important');
       bar.classList.add('hidden');
       const masterCb = document.getElementById('selectAllCheckbox');
       if (masterCb) masterCb.checked = false;
@@ -634,20 +640,50 @@
     }
 
     bar.classList.remove('hidden');
-    document.getElementById('batchCountBadge').textContent = selected.length;
-    document.getElementById('batchCountText').textContent = selected.length + ' Bulan Terpilih';
+    bar.style.display = 'block';
+    bar.style.setProperty('display', 'block', 'important');
 
-    const uniqueWarga = [...new Set(selected.map(r => r.wargaNama))];
+    const badgeEl = document.getElementById('batchCountBadge');
+    if (badgeEl) badgeEl.textContent = selected.length;
+    
+    const countTextEl = document.getElementById('batchCountText');
+    if (countTextEl) countTextEl.textContent = selected.length + ' Bulan Terpilih';
+
+    const uniqueWarga = [...new Set(selected.map(r => r.wargaNama).filter(Boolean))];
     const wargaTextEl = document.getElementById('batchWargaText');
-    if (uniqueWarga.length === 1) {
-      wargaTextEl.textContent = '• Warga: ' + uniqueWarga[0];
-    } else {
-      wargaTextEl.textContent = '• ' + uniqueWarga.length + ' Warga Berbeda';
+    if (wargaTextEl) {
+      if (uniqueWarga.length === 1) {
+        wargaTextEl.textContent = '• Warga: ' + uniqueWarga[0];
+      } else if (uniqueWarga.length > 1) {
+        wargaTextEl.textContent = '• ' + uniqueWarga.length + ' Warga Berbeda';
+      } else {
+        wargaTextEl.textContent = '';
+      }
     }
 
     const totalNominal = selected.reduce((acc, curr) => acc + curr.nominal, 0);
-    document.getElementById('batchTotalText').textContent = 'Rp ' + totalNominal.toLocaleString('id-ID');
+    const totalTextEl = document.getElementById('batchTotalText');
+    if (totalTextEl) {
+      totalTextEl.textContent = 'Rp ' + totalNominal.toLocaleString('id-ID');
+    }
   }
+
+  // Global listeners ensuring immediate reaction on any browser
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.classList.contains('iuran-row-check')) {
+      updateBatchSelectionBar();
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (e.target && (e.target.classList.contains('iuran-row-check') || e.target.id === 'selectAllCheckbox')) {
+      setTimeout(updateBatchSelectionBar, 10);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    updateBatchSelectionBar();
+  });
 
   function clearBatchSelection() {
     document.querySelectorAll('.iuran-row-check').forEach(cb => cb.checked = false);
