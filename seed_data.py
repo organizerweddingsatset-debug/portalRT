@@ -34,8 +34,48 @@ def seed_database():
         # Notifikasi API (WhatsApp / Gateway)
         ('wa_gateway_provider', 'Fonnte / Wablas API', 'notifikasi', 'Provider WhatsApp Gateway'),
         ('wa_api_url', 'https://api.fonnte.com/send', 'notifikasi', 'URL Endpoint API Gateway'),
-        ('wa_api_token', 'DEMO_RT09_SECRET_TOKEN_2026', 'notifikasi', 'API Key / Token Otentikasi'),
-        ('template_tagihan', '*PEMBERITAHUAN & PENGINGAT IURAN WARGA RT 09 / RW 14*\\n_Perumahan De Naila Village_\\n\\nYth. Bapak/Ibu *{nama}*\\nPenghuni Rumah: *{no_rumah}*\\n\\nSemoga Bapak/Ibu dan keluarga senantiasa dalam keadaan sehat walafiat.\\n\\nMelalui pesan ini, kami menyampaikan rincian kewajiban iuran kas Paguyuban RT 09:\\n\\n════════════════════════════════════\\n📅 *1. NOMINAL BULAN INI (JATUH TEMPO TGL 15)*\\n• Periode: *Bulan {bulan_ini} / {tahun_ini} ({nama_bulan_ini})*\\n• Batas Jatuh Tempo: *Tanggal 15 {nama_bulan_ini} {tahun_ini}*\\n• Nominal: *Rp {nominal_bulan_ini}*\\n• Status: *{status_bulan_ini}*\\n\\n⚠️ *2. NOMINAL TUNGGAKAN BULAN SEBELUMNYA*\\n{rincian_tunggakan}\\n• Subtotal Tunggakan: *Rp {subtotal_tunggakan}*\\n\\n════════════════════════════════════\\n💵 *TOTAL PEMBAYARAN:*\\n*(Bulan Ini + Tunggakan Belum Lunas)*\\n👉 *Rp {total_keseluruhan}*\\n════════════════════════════════════\\n\\n💳 *Metode Pembayaran Resmi RT 09:*\\n1. *Portal Warga RT 09 (QRIS Instan Dinamis & Bayar Sekaligus):*\\n   https://portalrt.id/iuran\\n2. *Transfer Bank Rekening Kas RT:*\\n   Bank Central Asia (BCA) No. Rek: *8830-1928-31*\\n   Atas Nama: *PAGUYUBAN WARGA RT 09*\\n3. *Tunai / Cash:*\\n   Langsung ke Bendahara RT (Bpk. Ahmad Fauzi / Rumah A2/05)\\n\\n_Setelah pembayaran terverifikasi, Kuitansi Resmi Digital Sah otomatis dapat diunduh melalui portal warga._\\n\\nMohon konfirmasi jika telah melakukan pembayaran atau unggah bukti transfer di portal. Terima kasih atas kerja sama dan partisipasi Bapak/Ibu demi kenyamanan lingkungan kita bersama. 🙏\\n\\nSalam hormat,\\n*Pengurus Paguyuban RT 09 / RW 14*', 'notifikasi', 'Template Pesan Tagihan & Pengingat Iuran (Bulan Ini tgl 15 + Tunggakan)'),
+        ('template_tagihan', """*PEMBERITAHUAN & PENGINGAT IURAN WARGA RT 09 / RW 14*
+_Perumahan De Naila Village_
+
+Yth. Bapak/Ibu *{nama}*
+Penghuni Rumah: *{no_rumah}*
+
+Semoga Bapak/Ibu dan keluarga senantiasa dalam keadaan sehat walafiat.
+
+Melalui pesan ini, kami menyampaikan rincian kewajiban iuran kas Paguyuban RT 09:
+
+════════════════════════════════════
+📅 *1. NOMINAL BULAN INI (JATUH TEMPO TGL 15)*
+• Periode: *Bulan {bulan_ini} / {tahun_ini} ({nama_bulan_ini})*
+• Batas Jatuh Tempo: *Tanggal 15 {nama_bulan_ini} {tahun_ini}*
+• Nominal: *Rp {nominal_bulan_ini}*
+• Status: *{status_bulan_ini}*
+
+⚠️ *2. NOMINAL TUNGGAKAN BULAN SEBELUMNYA*
+{rincian_tunggakan}
+• Subtotal Tunggakan: *Rp {subtotal_tunggakan}*
+
+════════════════════════════════════
+💵 *TOTAL PEMBAYARAN:*
+*(Bulan Ini + Tunggakan Belum Lunas)*
+👉 *Rp {total_keseluruhan}*
+════════════════════════════════════
+
+💳 *Metode Pembayaran Resmi RT 09:*
+1. *Portal Warga RT 09 (QRIS Instan Dinamis & Bayar Sekaligus):*
+   https://portalrt.id/iuran
+2. *Transfer Bank Rekening Kas RT:*
+   Bank Central Asia (BCA) No. Rek: *8830-1928-31*
+   Atas Nama: *PAGUYUBAN WARGA RT 09*
+3. *Tunai / Cash:*
+   Langsung ke Bendahara RT (Bpk. Ahmad Fauzi / Rumah A2/05)
+
+_Setelah pembayaran terverifikasi, Kuitansi Resmi Digital Sah otomatis dapat diunduh melalui portal warga._
+
+Mohon konfirmasi jika telah melakukan pembayaran atau unggah bukti transfer di portal. Terima kasih atas kerja sama dan partisipasi Bapak/Ibu demi kenyamanan lingkungan kita bersama. 🙏
+
+Salam hormat,
+*Pengurus Paguyuban RT 09 / RW 14*""", 'notifikasi', 'Template Pesan Tagihan & Pengingat Iuran (Bulan Ini tgl 15 + Tunggakan)'),
         ('template_konfirmasi_lunas', 'Terima kasih Bapak/Ibu {nama}. Pembayaran iuran {rt_rw} Rumah {no_rumah} periode {periode} sebesar Rp {jumlah} telah diverifikasi dan LUNAS. Partisipasi Anda sangat berarti bagi kemajuan lingkungan kita.', 'notifikasi', 'Template Konfirmasi Pembayaran Lunas'),
         ('template_surat_selesai', 'Halo {nama}, pengajuan surat pengantar {jenis_surat} dengan nomor {nomor_surat} telah disetujui oleh Pengurus {rt_rw}. Silakan unduh atau cetak surat Anda melalui portal.', 'notifikasi', 'Template Pengajuan Surat Disetujui'),
         ('template_pelaporan_respon', 'Halo {nama}, laporan pengaduan Anda mengenai "{judul}" telah direspon oleh Pengurus RT: Status [{status}]. Keterangan: {tanggapan}. Terima kasih atas kepedulian Anda.', 'notifikasi', 'Template Respon Pengaduan Warga'),
