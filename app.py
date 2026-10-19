@@ -52,6 +52,48 @@ def check_and_upgrade_db():
                 if 'kode_pembayaran' not in cols:
                     conn.execute(text("ALTER TABLE iuran ADD COLUMN kode_pembayaran VARCHAR(50)"))
                 conn.commit()
+            
+            # Upgrade template notifikasi tagihan ke format rincian jatuh tempo tgl 15 + tunggakan
+            try:
+                curr_tpl = Pengaturan.get('template_tagihan')
+                if curr_tpl and ('Halo Bapak/Ibu {nama}, kami menginformasikan tagihan' in curr_tpl or 'Batas Jatuh Tempo: *Tanggal 15' not in curr_tpl):
+                    new_tpl = (
+                        "*PEMBERITAHUAN & PENGINGAT IURAN WARGA RT 09 / RW 14*\n"
+                        "_Perumahan De Naila Village_\n\n"
+                        "Yth. Bapak/Ibu *{nama}*\n"
+                        "Penghuni Rumah: *{no_rumah}*\n\n"
+                        "Semoga Bapak/Ibu dan keluarga senantiasa dalam keadaan sehat walafiat.\n\n"
+                        "Melalui pesan ini, kami menyampaikan rincian kewajiban iuran kas Paguyuban RT 09:\n\n"
+                        "════════════════════════════════════\n"
+                        "📅 *1. NOMINAL BULAN INI (JATUH TEMPO TGL 15)*\n"
+                        "• Periode: *Bulan {bulan_ini} / {tahun_ini} ({nama_bulan_ini})*\n"
+                        "• Batas Jatuh Tempo: *Tanggal 15 {nama_bulan_ini} {tahun_ini}*\n"
+                        "• Nominal: *Rp {nominal_bulan_ini}*\n"
+                        "• Status: *{status_bulan_ini}*\n\n"
+                        "⚠️ *2. NOMINAL TUNGGAKAN BULAN SEBELUMNYA*\n"
+                        "{rincian_tunggakan}\n"
+                        "• Subtotal Tunggakan: *Rp {subtotal_tunggakan}*\n\n"
+                        "════════════════════════════════════\n"
+                        "💵 *TOTAL PEMBAYARAN:*\n"
+                        "*(Bulan Ini + Tunggakan Belum Lunas)*\n"
+                        "👉 *Rp {total_keseluruhan}*\n"
+                        "════════════════════════════════════\n\n"
+                        "💳 *Metode Pembayaran Resmi RT 09:*\n"
+                        "1. *Portal Warga RT 09 (QRIS Instan Dinamis & Bayar Sekaligus):*\n"
+                        "   https://portalrt.id/iuran\n"
+                        "2. *Transfer Bank Rekening Kas RT:*\n"
+                        "   Bank Central Asia (BCA) No. Rek: *8830-1928-31*\n"
+                        "   Atas Nama: *PAGUYUBAN WARGA RT 09*\n"
+                        "3. *Tunai / Cash:*\n"
+                        "   Langsung ke Bendahara RT (Bpk. Ahmad Fauzi / Rumah A2/05)\n\n"
+                        "_Setelah pembayaran terverifikasi, Kuitansi Resmi Digital Sah otomatis dapat diunduh melalui portal warga._\n\n"
+                        "Mohon konfirmasi jika telah melakukan pembayaran atau unggah bukti transfer di portal. Terima kasih atas kerja sama dan partisipasi Bapak/Ibu demi kenyamanan lingkungan kita bersama. 🙏\n\n"
+                        "Salam hormat,\n"
+                        "*Pengurus Paguyuban RT 09 / RW 14*"
+                    )
+                    Pengaturan.set('template_tagihan', new_tpl, kategori='notifikasi', deskripsi='Template Pesan Tagihan & Pengingat Iuran (Bulan Ini tgl 15 + Tunggakan)')
+            except Exception:
+                pass
         except Exception:
             pass
 

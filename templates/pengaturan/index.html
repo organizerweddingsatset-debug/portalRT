@@ -157,10 +157,16 @@
 
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Template Tagihan Iuran Bulanan</label>
-          <textarea name="template_tagihan" rows="3"
-            class="dark-input text-xs">{{ settings.get('template_tagihan', '') }}</textarea>
-          <span class="text-[10px] text-slate-500">Variabel: {nama}, {rt_rw}, {periode}, {jumlah}, {status}</span>
+          <label class="block text-xs font-medium text-slate-300 mb-1 flex items-center justify-between">
+            <span class="font-bold text-white">Template Tagihan & Pengingat Iuran (Bulan Ini Jatuh Tempo Tgl 15 + Rincian Tunggakan)</span>
+            <span class="text-[10px] text-indigo-400 font-mono">Format Pesan WhatsApp Resmi</span>
+          </label>
+          <textarea name="template_tagihan" rows="12"
+            class="dark-input font-mono text-xs leading-relaxed">{{ settings.get('template_tagihan', '') }}</textarea>
+          <div class="text-[10px] text-slate-400 mt-1 space-y-0.5">
+            <div><strong class="text-indigo-300">Variabel Dinamis:</strong> <code class="text-amber-300">{nama}</code>, <code class="text-amber-300">{no_rumah}</code>, <code class="text-amber-300">{rt_rw}</code>, <code class="text-amber-300">{bulan_ini}</code>, <code class="text-amber-300">{tahun_ini}</code>, <code class="text-amber-300">{nama_bulan_ini}</code>, <code class="text-amber-300">{nominal_bulan_ini}</code>, <code class="text-amber-300">{status_bulan_ini}</code>, <code class="text-amber-300">{rincian_tunggakan}</code>, <code class="text-amber-300">{subtotal_tunggakan}</code>, <code class="text-amber-300">{total_keseluruhan}</code></div>
+            <div class="text-slate-500">Pesan ini secara otomatis membedakan tagihan bulan berjalan (jatuh tempo tgl 15) dan merinci tunggakan bulan-bulan sebelumnya.</div>
+          </div>
         </div>
 
         <div>
