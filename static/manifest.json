@@ -1,0 +1,43 @@
+{
+  "name": "Portal RT 09 - Sistem Informasi Warga & Kas",
+  "short_name": "Portal RT 09",
+  "description": "Sistem Informasi Manajemen Paguyuban RT 09 / RW 14: Kependudukan, Iuran Kas, Persuratan Resmi, Inventaris, dan Pengaduan Warga.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0f1d",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait",
+  "lang": "id",
+  "categories": ["utilities", "productivity", "government"],
+  "icons": [
+    {
+      "src": "/static/img/logo_rt.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Iuran Warga",
+      "url": "/iuran",
+      "description": "Cek tagihan & bayar iuran warga RT 09"
+    },
+    {
+      "name": "Laporan Kas",
+      "url": "/kas",
+      "description": "Pantau transparansi kas paguyuban"
+    },
+    {
+      "name": "Pengajuan Surat",
+      "url": "/persuratan",
+      "description": "Buat surat pengantar RT resmi"
+    },
+    {
+      "name": "Pengumuman",
+      "url": "/pengumuman",
+      "description": "Lihat info & edaran terkini"
+    }
+  ]
+}

@@ -1,0 +1,617 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Ringkasan Statistik RT{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Role Banner & Personal Welcome Greeting -->
+  <div class="card-glow rounded-xl p-5 border border-[#212c4e] bg-gradient-to-r from-[#141b31] via-[#16213e] to-[#12182c] flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex items-center space-x-3.5">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-lg border
+        {% if current_user.role == 'superadmin' %}
+          bg-purple-950/80 border-purple-700/60 text-purple-400
+        {% elif current_user.role in ['ketua_rt', 'pejabat'] %}
+          bg-amber-950/80 border-amber-700/60 text-amber-400
+        {% elif current_user.role == 'pengurus' %}
+          bg-emerald-950/80 border-emerald-700/60 text-emerald-400
+        {% else %}
+          bg-indigo-950/80 border-indigo-700/60 text-indigo-400
+        {% endif %}">
+        {% if current_user.role == 'superadmin' %}
+          <i class="fa-solid fa-server text-2xl"></i>
+        {% elif current_user.role in ['ketua_rt', 'pejabat'] %}
+          <i class="fa-solid fa-crown text-2xl"></i>
+        {% elif current_user.role == 'pengurus' %}
+          <i class="fa-solid fa-user-tie text-2xl"></i>
+        {% else %}
+          <i class="fa-solid fa-house-chimney-user text-2xl"></i>
+        {% endif %}
+      </div>
+      <div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="text-xl font-black text-white tracking-tight">Selamat Datang, {{ current_user.nama }}!</h2>
+          <span class="text-xs px-2.5 py-0.5 rounded-full font-bold
+            {% if current_user.role == 'superadmin' %}
+              bg-purple-950 text-purple-300 border border-purple-700
+            {% elif current_user.role in ['ketua_rt', 'pejabat'] %}
+              bg-amber-950 text-amber-300 border border-amber-700
+            {% elif current_user.role == 'pengurus' %}
+              bg-emerald-950 text-emerald-300 border border-emerald-700
+            {% else %}
+              bg-indigo-950 text-indigo-300 border border-indigo-700
+            {% endif %}">
+            <i class="fa-solid fa-shield-halved mr-1"></i> {{ current_user.role_display }}
+          </span>
+          <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+            {{ current_user.user_type_display }}
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">
+          {% if current_user.role == 'superadmin' %}
+            Portal Administrasi Sistem RT 09 &bull; Akses Teknis Penuh &bull; Bukan Entitas Warga
+          {% elif current_user.role in ['ketua_rt', 'pejabat'] %}
+            Dashboard Eksekutif Ketua RT 09 / RW 14 &bull; {% if user_rumah %}Rumah {{ user_rumah.blok_nomor }}{% endif %}
+          {% elif current_user.role == 'pengurus' %}
+            Dashboard Operasional Pengurus Lingkungan &bull; {% if user_rumah %}Rumah {{ user_rumah.blok_nomor }}{% endif %}
+          {% else %}
+            Portal Layanan Mandiri Warga RT 09 &bull; {% if user_rumah %}Penghuni Rumah <strong>{{ user_rumah.blok_nomor }}</strong>{% else %}Warga Terdaftar{% endif %}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-2 text-xs text-slate-400 self-start md:self-auto bg-[#0d1326] px-3.5 py-2 rounded-lg border border-[#1e2a4a]">
+      <i class="fa-regular fa-clock text-indigo-400"></i>
+      <span>Periode: <strong class="text-slate-200">{{ nama_bulan }} 2026</strong></span>
+    </div>
+  </div>
+
+  <!-- Metric Cards Tailored to Current Role -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    {% if current_user.role == 'superadmin' %}
+      <!-- ================= 1. SUPERADMIN CARDS ================= -->
+      <!-- Card 1: Total Kas RT (Audit Saldo) -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-amber-400"><i class="fa-solid fa-sack-dollar"></i></span>
+          <span>Total Kas</span>
+        </div>
+        <div class="text-2xl font-black text-white tracking-tight">
+          Rp {{ "{:,.0f}".format(total_kas).replace(',', '.') }}
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Saldo kas berjalan & audit</span>
+          <a href="{{ url_for('kas_index') }}" class="text-indigo-400 hover:text-indigo-300 font-medium">Audit Kas &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 2: Akun Pengguna -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-purple-400"><i class="fa-solid fa-users-gear"></i></span>
+          <span>Akun Pengguna</span>
+        </div>
+        <div class="text-2xl font-black text-purple-400 tracking-tight">
+          {{ total_users }} <span class="text-xs font-normal text-slate-400">Akun</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Superadmin, RT, Pengurus, Warga</span>
+          <a href="{{ url_for('pengaturan_index') }}" class="text-purple-400 hover:text-purple-300 font-medium">Kelola &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 3: Master Rumah & Kavling -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-sky-400"><i class="fa-solid fa-house-laptop"></i></span>
+          <span>Unit Rumah</span>
+        </div>
+        <div class="text-2xl font-black text-sky-400 tracking-tight">
+          {{ total_rumah }} <span class="text-xs font-normal text-slate-400">Unit</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Data kavling & status hunian</span>
+          <a href="{{ url_for('rumah_index') }}" class="text-sky-400 hover:text-sky-300 font-medium">Master Rumah &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 4: Status Platform / Engine -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+          <span>Status Sistem</span>
+        </div>
+        <div class="text-2xl font-black text-emerald-400 tracking-tight">
+          Optimal
+        </div>
+        <div class="mt-2 text-[11px] text-emerald-400/90 font-medium flex items-center justify-between">
+          <span>Database & Server Online</span>
+          <span class="text-slate-400 text-[10px]">{{ nama_bulan }} 2026</span>
+        </div>
+      </div>
+
+    {% elif current_user.role in ['ketua_rt', 'pejabat'] %}
+      <!-- ================= 2. KETUA RT CARDS ================= -->
+      <!-- Card 1: Total Kas RT -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-amber-400"><i class="fa-solid fa-sack-dollar"></i></span>
+          <span>Total Kas</span>
+        </div>
+        <div class="text-2xl font-black text-white tracking-tight">
+          Rp {{ "{:,.0f}".format(total_kas).replace(',', '.') }}
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Saldo kas berjalan RT</span>
+          <a href="{{ url_for('kas_index') }}" class="text-indigo-400 hover:text-indigo-300 font-medium">Buku Kas &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 2: Kependudukan RT -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-cyan-400"><i class="fa-solid fa-users"></i></span>
+          <span>Kependudukan RT</span>
+        </div>
+        <div class="text-2xl font-black text-cyan-400 tracking-tight">
+          {{ total_warga }} <span class="text-xs font-normal text-slate-400">Jiwa</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Warga aktif terdaftar</span>
+          <a href="{{ url_for('warga_index') }}" class="text-cyan-400 hover:text-cyan-300 font-medium">Data Warga &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 3: Persetujuan Surat Menunggu -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-indigo-400"><i class="fa-solid fa-file-signature"></i></span>
+          <span>Persetujuan Surat</span>
+        </div>
+        <div class="text-2xl font-black {% if pending_surat > 0 %}text-amber-400{% else %}text-emerald-400{% endif %} tracking-tight">
+          {{ pending_surat }} <span class="text-xs font-normal text-slate-400">Berkas</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>{% if pending_surat > 0 %}Menunggu disposisi RT{% else %}Semua telah disetujui{% endif %}</span>
+          <a href="{{ url_for('persuratan_index') }}" class="text-indigo-400 hover:text-indigo-300 font-medium">Disposisi &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 4: Aduan / Laporan Warga -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-rose-400"><i class="fa-solid fa-comment-dots"></i></span>
+          <span>Laporan Lingkungan</span>
+        </div>
+        <div class="text-2xl font-black {% if pending_laporan > 0 %}text-rose-400{% else %}text-emerald-400{% endif %} tracking-tight">
+          {{ pending_laporan }} <span class="text-xs font-normal text-slate-400">Aktif</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>{% if pending_laporan > 0 %}Perlu tindak lanjut RT{% else %}Lingkungan aman{% endif %}</span>
+          <a href="{{ url_for('pelaporan_index') }}" class="text-rose-400 hover:text-rose-300 font-medium">Tinjau &rarr;</a>
+        </div>
+      </div>
+
+    {% elif current_user.role == 'pengurus' %}
+      <!-- ================= 3. PENGURUS CARDS ================= -->
+      <!-- Card 1: Total Kas RT -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-emerald-400"><i class="fa-solid fa-wallet"></i></span>
+          <span>Total Kas</span>
+        </div>
+        <div class="text-2xl font-black text-white tracking-tight">
+          Rp {{ "{:,.0f}".format(total_kas).replace(',', '.') }}
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Saldo kas operasional</span>
+          <a href="{{ url_for('kas_tambah') }}" class="text-emerald-400 hover:text-emerald-300 font-medium">+ Catat Kas</a>
+        </div>
+      </div>
+
+      <!-- Card 2: Verifikasi Iuran -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-sky-400"><i class="fa-solid fa-receipt"></i></span>
+          <span>Verifikasi Iuran</span>
+        </div>
+        <div class="text-2xl font-black {% if pending_verifikasi_iuran > 0 %}text-sky-400{% else %}text-emerald-400{% endif %} tracking-tight">
+          {{ pending_verifikasi_iuran }} <span class="text-xs font-normal text-slate-400">Menunggu</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>{% if pending_verifikasi_iuran > 0 %}Bukti QRIS/transfer baru{% else %}Semua iuran terverifikasi{% endif %}</span>
+          <a href="{{ url_for('iuran_index') }}" class="text-sky-400 hover:text-sky-300 font-medium">Verifikasi &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 3: Peminjaman Inventaris -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-purple-400"><i class="fa-solid fa-boxes-stacked"></i></span>
+          <span>Inventaris Dipinjam</span>
+        </div>
+        <div class="text-2xl font-black text-purple-400 tracking-tight">
+          {{ active_pinjam_inventaris }} <span class="text-xs font-normal text-slate-400">Aset</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Aset RT sedang dipinjam warga</span>
+          <a href="{{ url_for('inventaris_index') }}" class="text-purple-400 hover:text-purple-300 font-medium">Cek Aset &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 4: Permohonan Surat Masuk -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-indigo-400"><i class="fa-solid fa-envelope-open-text"></i></span>
+          <span>Permohonan Surat</span>
+        </div>
+        <div class="text-2xl font-black {% if pending_surat > 0 %}text-amber-400{% else %}text-emerald-400{% endif %} tracking-tight">
+          {{ pending_surat }} <span class="text-xs font-normal text-slate-400">Pengajuan</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Administrasi berkas surat</span>
+          <a href="{{ url_for('persuratan_index') }}" class="text-indigo-400 hover:text-indigo-300 font-medium">Proses &rarr;</a>
+        </div>
+      </div>
+
+    {% else %}
+      <!-- ================= 4. WARGA CARDS (Pemilik & Kontrak) ================= -->
+      <!-- Card 1: Status Iuran Rumah Saya -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          {% if user_iuran_tunggakan and user_iuran_tunggakan > 0 %}
+            <span class="text-rose-400"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          {% else %}
+            <span class="text-emerald-400"><i class="fa-solid fa-house-circle-check"></i></span>
+          {% endif %}
+          <span>Status Iuran Rumah</span>
+        </div>
+        <div class="text-2xl font-black tracking-tight">
+          {% if user_iuran_tunggakan and user_iuran_tunggakan > 0 %}
+            <span class="text-rose-400">{{ user_iuran_tunggakan }} Bulan</span> <span class="text-xs font-normal text-rose-300">Tertunggak</span>
+          {% else %}
+            <span class="text-emerald-400">Lunas</span>
+          {% endif %}
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>{% if user_rumah %}{{ user_rumah.blok_nomor }}{% else %}Rumah Warga{% endif %} &bull; {% if user_iuran_tunggakan > 0 %}Segera bayar via QRIS{% else %}Bebas tunggakan{% endif %}</span>
+          <a href="{{ url_for('iuran_index') }}" class="text-indigo-400 hover:text-indigo-300 font-medium">
+            {% if user_iuran_tunggakan > 0 %}Bayar QRIS &rarr;{% else %}Detail &rarr;{% endif %}
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 2: Pengajuan Surat Pengantar Saya -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-sky-400"><i class="fa-solid fa-file-lines"></i></span>
+          <span>Surat Pengantar Saya</span>
+        </div>
+        <div class="text-2xl font-black text-sky-400 tracking-tight">
+          {{ user_surat_count }} <span class="text-xs font-normal text-slate-400">Diajukan</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>{{ user_surat_disetujui }} berkas telah disetujui RT</span>
+          <a href="{{ url_for('persuratan_index') }}" class="text-sky-400 hover:text-sky-300 font-medium">Status &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 3: Laporan Lingkungan Saya -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-purple-400"><i class="fa-solid fa-comment-dots"></i></span>
+          <span>Laporan Lingkungan</span>
+        </div>
+        <div class="text-2xl font-black text-purple-400 tracking-tight">
+          {{ user_laporan_count }} <span class="text-xs font-normal text-slate-400">Aspirasi</span>
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Aspirasi & aduan warga diajukan</span>
+          <a href="{{ url_for('pelaporan_index') }}" class="text-purple-400 hover:text-purple-300 font-medium">Tinjau &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Card 4: Transparansi Kas RT -->
+      <div class="card-glow rounded-xl p-5 relative overflow-hidden border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-slate-400 mb-2">
+          <span class="text-amber-400"><i class="fa-solid fa-sack-dollar"></i></span>
+          <span>Total Kas</span>
+        </div>
+        <div class="text-2xl font-black text-white tracking-tight">
+          Rp {{ "{:,.0f}".format(total_kas).replace(',', '.') }}
+        </div>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+          <span>Transparansi dana RT</span>
+          <a href="{{ url_for('kas_index') }}" class="text-amber-400 hover:text-amber-300 font-medium">Buku Kas &rarr;</a>
+        </div>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+  <!-- Lower Section: Pengumuman RT (Left) & Ringkasan RT (Right) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Pengumuman RT (7 cols on desktop) -->
+    <div class="lg:col-span-7 space-y-4">
+      <div class="card-glow rounded-xl p-6 border border-[#212c4e] bg-[#141b31]">
+        
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-[#1d2745]">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-rose-400 text-lg"><i class="fa-solid fa-bullhorn"></i></span>
+            <h3 class="text-lg font-bold text-white tracking-wide">Pengumuman RT</h3>
+          </div>
+          {% if current_user and current_user.is_admin() %}
+          <a href="{{ url_for('pengumuman_tambah') }}" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded-lg shadow-sm">
+            <i class="fa-solid fa-plus mr-1"></i> Buat Pengumuman
+          </a>
+          {% endif %}
+        </div>
+
+        <div class="space-y-6">
+          {% for item in pengumuman_list %}
+          <div class="space-y-2 border-b border-[#1b2440] last:border-0 pb-5 last:pb-0">
+            <div class="flex items-start justify-between">
+              <h4 class="text-sm md:text-base font-bold text-slate-100 hover:text-indigo-300 transition-colors">
+                {{ item.judul }}
+              </h4>
+              <span class="text-[11px] px-2 py-0.5 rounded ml-2 shrink-0 {% if item.kategori == 'Penting' %}bg-rose-950/80 text-rose-300 border border-rose-800{% else %}bg-indigo-950/80 text-indigo-300 border border-indigo-800{% endif %}">
+                {{ item.kategori }}
+              </span>
+            </div>
+            <p class="text-xs md:text-sm text-slate-300 leading-relaxed text-justify">
+              {{ item.konten }}
+            </p>
+            <div class="text-[11px] text-slate-400 pt-1 flex items-center space-x-3">
+              <span><i class="fa-regular fa-calendar mr-1"></i> {{ item.tanggal.strftime('%d %b %Y') if item.tanggal else 'April 2026' }}</span>
+              <span>&bull;</span>
+              <span><i class="fa-solid fa-user-tie mr-1"></i> {{ item.author }}</span>
+            </div>
+          </div>
+          {% else %}
+          <p class="text-sm text-slate-400 italic">Belum ada pengumuman resmi.</p>
+          {% endfor %}
+        </div>
+
+      </div>
+
+      <!-- Quick Action Toolbar Tailored to Role -->
+      <div class="card-glow rounded-xl p-4 border border-[#212c4e] bg-[#141b31]">
+        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
+          {% if current_user.role == 'superadmin' %}
+            Aksi Cepat Super Administrator
+          {% elif current_user.role in ['ketua_rt', 'pejabat'] %}
+            Aksi Cepat Ketua RT
+          {% elif current_user.role == 'pengurus' %}
+            Aksi Cepat Pengurus Operasional
+          {% else %}
+            Aksi Cepat Layanan Warga
+          {% endif %}
+        </h4>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {% if current_user.role == 'superadmin' %}
+            <!-- Superadmin Actions -->
+            <a href="{{ url_for('pengaturan_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-user-gear text-purple-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Kelola Akun</span>
+            </a>
+            <a href="{{ url_for('rumah_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-house-chimney text-sky-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Master Rumah</span>
+            </a>
+            <a href="{{ url_for('kas_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-scale-balanced text-amber-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Audit Kas</span>
+            </a>
+            <a href="{{ url_for('warga_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-address-book text-indigo-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Data Warga</span>
+            </a>
+
+          {% elif current_user.role in ['ketua_rt', 'pejabat'] %}
+            <!-- Ketua RT Actions -->
+            <a href="{{ url_for('persuratan_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-stamp text-indigo-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Disposisi Surat</span>
+            </a>
+            <a href="{{ url_for('pengumuman_tambah') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-bullhorn text-rose-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Buat Pengumuman</span>
+            </a>
+            <a href="{{ url_for('pelaporan_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-comments text-amber-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Aduan Warga</span>
+            </a>
+            <a href="{{ url_for('kas_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-sack-dollar text-emerald-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Laporan Kas</span>
+            </a>
+
+          {% elif current_user.role == 'pengurus' %}
+            <!-- Pengurus Actions -->
+            <a href="{{ url_for('iuran_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-check-double text-sky-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Verifikasi Iuran</span>
+            </a>
+            <a href="{{ url_for('kas_tambah') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-money-bill-transfer text-emerald-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Catat Arus Kas</span>
+            </a>
+            <a href="{{ url_for('inventaris_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-boxes-stacked text-purple-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Kelola Aset</span>
+            </a>
+            <a href="{{ url_for('pengaturan_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-file-csv text-amber-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Import CSV</span>
+            </a>
+
+          {% else %}
+            <!-- Warga Actions -->
+            <a href="{{ url_for('iuran_index') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-qrcode text-indigo-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Bayar Iuran</span>
+            </a>
+            <a href="{{ url_for('persuratan_ajukan') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-file-signature text-emerald-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Ajukan Surat</span>
+            </a>
+            <a href="{{ url_for('pelaporan_ajukan') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-comment-dots text-amber-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Lapor Warga</span>
+            </a>
+            <a href="{{ url_for('inventaris_pinjam') }}" class="flex flex-col items-center justify-center p-3 rounded-lg bg-[#0e1428] hover:bg-[#1a2344] border border-[#232f53] text-center transition-all group">
+              <i class="fa-solid fa-handshake text-purple-400 text-lg mb-1.5 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-medium text-slate-200">Pinjam Aset</span>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan RT (5 cols on desktop) Matching Screenshot -->
+    <div class="lg:col-span-5 space-y-4">
+      <div class="card-glow rounded-xl p-6 border border-[#212c4e] bg-[#141b31]">
+        
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-[#1d2745]">
+          <div class="flex items-center space-x-2.5">
+            <span class="text-cyan-400 text-lg"><i class="fa-solid fa-chart-pie"></i></span>
+            <h3 class="text-lg font-bold text-white tracking-wide">Ringkasan RT</h3>
+          </div>
+          <span class="text-xs text-slate-400">Tahun 2026</span>
+        </div>
+
+        <div class="space-y-4 text-sm font-medium">
+          
+          <!-- Total Warga: 51 orang -->
+          <div class="flex items-center justify-between py-2 border-b border-[#192340]">
+            <div class="flex items-center space-x-2.5 text-slate-300">
+              <span class="text-purple-400 text-base"><i class="fa-solid fa-users"></i></span>
+              <span>Total Warga</span>
+            </div>
+            <div class="text-base font-bold text-white font-mono">
+              {{ total_warga }} orang
+            </div>
+          </div>
+
+          <!-- Iuran Lunas -->
+          <div class="flex items-center justify-between py-2 border-b border-[#192340]">
+            <div class="flex items-center space-x-2.5 text-slate-300">
+              <span class="text-emerald-400 text-base"><i class="fa-solid fa-square-check"></i></span>
+              <span>Iuran Lunas</span>
+            </div>
+            <div class="text-base font-bold text-emerald-400 font-mono">
+              {{ iuran_lunas }}
+            </div>
+          </div>
+
+          <!-- Belum Lunas -->
+          <div class="flex items-center justify-between py-2 border-b border-[#192340]">
+            <div class="flex items-center space-x-2.5 text-slate-300">
+              <span class="text-amber-400 text-base"><i class="fa-solid fa-hourglass-half"></i></span>
+              <span>Belum Lunas</span>
+            </div>
+            <div class="text-base font-bold text-amber-400 font-mono">
+              {{ iuran_belum_lunas }}
+            </div>
+          </div>
+
+          <!-- Menunggu Konfirmasi -->
+          <div class="flex items-center justify-between py-2">
+            <div class="flex items-center space-x-2.5 text-slate-300">
+              <span class="text-sky-400 text-base"><i class="fa-solid fa-circle-dot"></i></span>
+              <span>Menunggu Konfirmasi</span>
+            </div>
+            <div class="text-base font-bold text-sky-400 font-mono">
+              {{ iuran_menunggu }}
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Progress Bar Visualizer for Iuran -->
+        <div class="mt-6 pt-4 border-t border-[#1d2745]">
+          <div class="flex justify-between text-xs text-slate-400 mb-1.5">
+            <span>Rasio Kepatuhan Iuran</span>
+            <span class="font-bold text-indigo-400">{{ "{:.1f}".format((iuran_lunas / (iuran_lunas + iuran_belum_lunas + iuran_menunggu) * 100) if (iuran_lunas + iuran_belum_lunas + iuran_menunggu) > 0 else 0) }}%</span>
+          </div>
+          <div class="w-full bg-[#0d1326] h-3 rounded-full overflow-hidden flex">
+            {% set total_records = iuran_lunas + iuran_belum_lunas + iuran_menunggu %}
+            {% if total_records > 0 %}
+            <div style="width: {{ (iuran_lunas / total_records) * 100 }}%" class="bg-emerald-500 h-full" title="Lunas"></div>
+            <div style="width: {{ (iuran_menunggu / total_records) * 100 }}%" class="bg-sky-500 h-full" title="Menunggu Konfirmasi"></div>
+            <div style="width: {{ (iuran_belum_lunas / total_records) * 100 }}%" class="bg-amber-500 h-full" title="Belum Lunas"></div>
+            {% endif %}
+          </div>
+          <div class="flex items-center justify-between text-[10px] text-slate-400 mt-2">
+            <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-1"></span> Lunas</span>
+            <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-sky-500 mr-1"></span> Menunggu</span>
+            <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-amber-500 mr-1"></span> Belum Lunas</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Summary Status Box for Persuratan & Pelaporan / Inventaris -->
+      <div class="card-glow rounded-xl p-5 border border-[#212c4e] bg-[#141b31]">
+        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center justify-between">
+          <span>{% if current_user.role == 'warga' %}Layanan Terkini Anda{% else %}Status Layanan Lingkungan{% endif %}</span>
+          <span class="text-[10px] text-slate-400 font-normal">Realtime</span>
+        </h4>
+
+        {% if current_user.role == 'warga' %}
+          <!-- Warga Specific Status Grid -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-[#0e1428] border border-[#222d4f]">
+              <div class="text-[11px] text-slate-400 mb-1">Surat Saya</div>
+              <div class="text-xl font-bold text-white flex items-center justify-between">
+                <span>{{ user_surat_count }}</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">{{ user_surat_disetujui }} Selesai</span>
+              </div>
+              <a href="{{ url_for('persuratan_index') }}" class="text-[11px] text-indigo-400 hover:underline mt-1 block">Lihat surat &rarr;</a>
+            </div>
+
+            <div class="p-3 rounded-lg bg-[#0e1428] border border-[#222d4f]">
+              <div class="text-[11px] text-slate-400 mb-1">Aset Dipinjam</div>
+              <div class="text-xl font-bold text-white flex items-center justify-between">
+                <span>{{ user_pinjam_count }}</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">Barang</span>
+              </div>
+              <a href="{{ url_for('inventaris_index') }}" class="text-[11px] text-purple-400 hover:underline mt-1 block">Lihat pinjaman &rarr;</a>
+            </div>
+          </div>
+        {% else %}
+          <!-- RT & Pengurus & Superadmin Global Status Grid -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 rounded-lg bg-[#0e1428] border border-[#222d4f]">
+              <div class="text-[11px] text-slate-400 mb-1">Pengajuan Surat</div>
+              <div class="text-xl font-bold text-white flex items-center justify-between">
+                <span>{{ pending_surat }}</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Menunggu</span>
+              </div>
+              <a href="{{ url_for('persuratan_index') }}" class="text-[11px] text-indigo-400 hover:underline mt-1 block">Lihat persuratan &rarr;</a>
+            </div>
+
+            <div class="p-3 rounded-lg bg-[#0e1428] border border-[#222d4f]">
+              <div class="text-[11px] text-slate-400 mb-1">Laporan Lingkungan</div>
+              <div class="text-xl font-bold text-white flex items-center justify-between">
+                <span>{{ pending_laporan }}</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">Aktif</span>
+              </div>
+              <a href="{{ url_for('pelaporan_index') }}" class="text-[11px] text-amber-400 hover:underline mt-1 block">Lihat laporan &rarr;</a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

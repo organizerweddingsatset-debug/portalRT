@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Persuratan & Administrasi Warga - Portal RT 09{% endblock %}
+{% block page_title %}Persuratan Warga RT 09{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1">Total Permohonan</div>
+      <div class="text-2xl font-black text-white font-mono">{{ total_surat }}</div>
+      <div class="text-[11px] text-slate-400 mt-1">Dokumen diajukan</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-clock text-amber-400"></i>
+        <span>Diajukan / Menunggu</span>
+      </div>
+      <div class="text-2xl font-black text-amber-400 font-mono">{{ diajukan_count }}</div>
+      <div class="text-[11px] text-amber-400/80 mt-1">Perlu ditindaklanjuti</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-spinner text-sky-400"></i>
+        <span>Sedang Diproses</span>
+      </div>
+      <div class="text-2xl font-black text-sky-400 font-mono">{{ diproses_count }}</div>
+      <div class="text-[11px] text-sky-400/80 mt-1">Pemeriksaan berkas</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span>Disetujui / Selesai</span>
+      </div>
+      <div class="text-2xl font-black text-emerald-400 font-mono">{{ disetujui_count }}</div>
+      <div class="text-[11px] text-emerald-400/80 mt-1">Siap cetak / ambil</div>
+    </div>
+  </div>
+
+  <!-- Main Table Card -->
+  <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+    
+    <!-- Header & Action -->
+    <div class="p-5 border-b border-[#1f2a4a] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      
+      <!-- Filters -->
+      <form method="GET" action="{{ url_for('persuratan_index') }}" class="flex flex-wrap items-center gap-2.5 flex-1">
+        <select name="status" class="dark-input py-2 text-xs w-auto">
+          <option value="">Semua Status Pengajuan</option>
+          <option value="Diajukan" {% if request.args.get('status') == 'Diajukan' %}selected{% endif %}>Diajukan</option>
+          <option value="Diproses" {% if request.args.get('status') == 'Diproses' %}selected{% endif %}>Diproses</option>
+          <option value="Disetujui" {% if request.args.get('status') == 'Disetujui' %}selected{% endif %}>Disetujui</option>
+          <option value="Ditolak" {% if request.args.get('status') == 'Ditolak' %}selected{% endif %}>Ditolak</option>
+        </select>
+
+        <select name="jenis" class="dark-input py-2 text-xs w-auto">
+          <option value="">Semua Template Surat</option>
+          <option value="Surat Pengantar RT (KTP/KK)">Surat Pengantar RT (KTP/KK)</option>
+          <option value="Surat Keterangan Domisili">Surat Keterangan Domisili</option>
+          <option value="Surat Keterangan Usaha (SKU)">Surat Keterangan Usaha (SKU)</option>
+          <option value="Surat Keterangan Tidak Mampu (SKTM)">Surat Keterangan Tidak Mampu (SKTM)</option>
+          <option value="Surat Keterangan Kematian">Surat Keterangan Kematian</option>
+          <option value="Surat Keterangan Kelahiran">Surat Keterangan Kelahiran</option>
+          <option value="Surat Izin Keramaian">Surat Izin Keramaian</option>
+        </select>
+
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors">
+          Filter
+        </button>
+        {% if request.args.get('status') or request.args.get('jenis') %}
+        <a href="{{ url_for('persuratan_index') }}" class="text-xs text-slate-400 hover:text-white px-2 py-2">Reset</a>
+        {% endif %}
+      </form>
+
+      <a href="{{ url_for('persuratan_ajukan') }}" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg shadow-sm transition-all flex items-center space-x-1.5 shrink-0">
+        <i class="fa-solid fa-file-circle-plus text-xs"></i>
+        <span>Ajukan Surat Baru</span>
+      </a>
+
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-300">
+        <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px] border-b border-[#1f2a4a]">
+          <tr>
+            <th class="py-3 px-4">Nomor & Tgl Surat</th>
+            <th class="py-3 px-4">Nama Pemohon</th>
+            <th class="py-3 px-4">Jenis Template Surat</th>
+            <th class="py-3 px-4">Keperluan</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4 text-center">Aksi / Cetak</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#1b2440]">
+          {% for s in surat_list %}
+          <tr class="hover:bg-[#18213e]/60 transition-colors">
+            <td class="py-3 px-4">
+              <div class="font-mono font-bold text-white">{{ s.nomor_surat }}</div>
+              <div class="text-[10px] text-slate-400">{{ s.tanggal_pengajuan.strftime('%d %b %Y %H:%M') if s.tanggal_pengajuan else '-' }}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-white">{{ s.warga.nama }}</div>
+              <div class="text-[10px] text-slate-400 font-mono">NIK: {{ s.warga.nik }}</div>
+            </td>
+            <td class="py-3 px-4 font-semibold text-indigo-300">
+              {{ s.jenis_surat }}
+            </td>
+            <td class="py-3 px-4 max-w-xs truncate text-slate-300">
+              {{ s.keperluan }}
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2.5 py-1 rounded text-[11px] font-bold 
+                {% if s.status == 'Disetujui' %}
+                  bg-emerald-950/80 text-emerald-300 border border-emerald-800
+                {% elif s.status == 'Diproses' %}
+                  bg-sky-950/80 text-sky-300 border border-sky-800
+                {% elif s.status == 'Ditolak' %}
+                  bg-rose-950/80 text-rose-300 border border-rose-800
+                {% else %}
+                  bg-amber-950/80 text-amber-300 border border-amber-800
+                {% endif %}">
+                {{ s.status }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="inline-flex items-center space-x-1.5">
+                <a href="{{ url_for('persuratan_detail', id=s.id) }}" class="px-2.5 py-1 rounded bg-[#19223e] hover:bg-[#253258] text-slate-200 border border-[#2b3964] font-medium text-[11px] transition-colors" title="Lihat / Proses">
+                  <i class="fa-solid fa-eye mr-1"></i> Detail
+                </a>
+                
+                {% if s.status == 'Disetujui' %}
+                <a href="{{ url_for('persuratan_cetak', id=s.id) }}" target="_blank" class="px-2.5 py-1 rounded bg-indigo-600/80 hover:bg-indigo-500 text-white font-semibold text-[11px] transition-colors" title="Cetak Surat Resmi">
+                  <i class="fa-solid fa-print mr-1"></i> Cetak
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="py-8 text-center text-slate-400 italic">
+              Belum ada permohonan persuratan warga yang tercatat.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-4 border-t border-[#1f2a4a] text-xs text-slate-400 flex items-center justify-between">
+      <span>Total <strong>{{ surat_list|length }}</strong> dokumen persuratan</span>
+      <span>Pelayanan Administrasi RT 09</span>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Inventaris & Aset RT 09 - Portal RT 09{% endblock %}
+{% block page_title %}Manajemen Inventaris & Aset RT 09{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1">Total Jenis Barang</div>
+      <div class="text-2xl font-black text-white font-mono">{{ total_items }}</div>
+      <div class="text-[11px] text-slate-400 mt-1">Aset terdata di RT 09</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span>Siap / Tersedia</span>
+      </div>
+      <div class="text-2xl font-black text-emerald-400 font-mono">{{ tersedia_count }}</div>
+      <div class="text-[11px] text-emerald-400/80 mt-1">Dapat dipinjam warga</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-handshake text-sky-400"></i>
+        <span>Sedang Dipinjam</span>
+      </div>
+      <div class="text-2xl font-black text-sky-400 font-mono">{{ dipinjam_count }}</div>
+      <div class="text-[11px] text-sky-400/80 mt-1">Aktif di luar gudang</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-recycle text-rose-400"></i>
+        <span>Disposal / Rusak</span>
+      </div>
+      <div class="text-2xl font-black text-rose-400 font-mono">{{ disposal_count }}</div>
+      <div class="text-[11px] text-rose-400/80 mt-1">Aset dihapuskan</div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="flex items-center space-x-2 border-b border-[#1f2a4a] pb-2">
+    <button onclick="switchTab('aset')" id="tabBtn-aset" class="px-4 py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white transition-all">
+      <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Daftar Aset (Pengadaan)
+    </button>
+    <button onclick="switchTab('pinjam')" id="tabBtn-pinjam" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] transition-all">
+      <i class="fa-solid fa-handshake mr-1.5"></i> Riwayat Peminjaman ({{ peminjaman_list|length }})
+    </button>
+    <button onclick="switchTab('disposal')" id="tabBtn-disposal" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] transition-all">
+      <i class="fa-solid fa-recycle mr-1.5"></i> Riwayat Disposal / Hapus Aset ({{ disposal_list|length }})
+    </button>
+  </div>
+
+  <!-- TAB 1: DAFTAR ASET -->
+  <div id="tabContent-aset" class="space-y-4">
+    <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+      
+      <div class="p-5 border-b border-[#1f2a4a] flex items-center justify-between">
+        <h4 class="text-sm font-bold text-white">Inventarisasi Barang Paguyuban RT</h4>
+        
+        <div class="flex items-center space-x-2">
+          <a href="{{ url_for('inventaris_pinjam') }}" class="text-xs bg-[#19223e] hover:bg-[#232f53] text-indigo-300 border border-[#2b3964] font-medium px-3.5 py-2 rounded-lg transition-colors flex items-center space-x-1.5">
+            <i class="fa-solid fa-handshake"></i>
+            <span>Pinjam Barang</span>
+          </a>
+          {% if current_user and current_user.is_admin() %}
+          <a href="{{ url_for('inventaris_tambah') }}" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3.5 py-2 rounded-lg shadow-sm transition-all flex items-center space-x-1.5">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>+ Pengadaan Aset Baru</span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px] border-b border-[#1f2a4a]">
+            <tr>
+              <th class="py-3 px-4">Kode & Nama Barang</th>
+              <th class="py-3 px-4">Kategori</th>
+              <th class="py-3 px-4">Jumlah & Satuan</th>
+              <th class="py-3 px-4">Kondisi</th>
+              <th class="py-3 px-4">Lokasi Penyimpanan</th>
+              <th class="py-3 px-4">Status</th>
+              {% if current_user and current_user.is_admin() %}
+              <th class="py-3 px-4 text-center">Tindakan</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1b2440]">
+            {% for item in inventaris_list %}
+            <tr class="hover:bg-[#18213e]/60 transition-colors">
+              <td class="py-3 px-4">
+                <div class="font-bold text-white">{{ item.nama_barang }}</div>
+                <div class="text-[10px] font-mono text-slate-400">{{ item.kode_barang }}</div>
+              </td>
+              <td class="py-3 px-4">{{ item.kategori }}</td>
+              <td class="py-3 px-4 font-mono font-bold text-white">
+                {{ item.jumlah }} {{ item.satuan }}
+              </td>
+              <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold 
+                  {% if item.kondisi == 'Baik' %}
+                    bg-emerald-950/80 text-emerald-300 border border-emerald-800
+                  {% elif item.kondisi == 'Rusak Ringan' %}
+                    bg-amber-950/80 text-amber-300 border border-amber-800
+                  {% else %}
+                    bg-rose-950/80 text-rose-300 border border-rose-800
+                  {% endif %}">
+                  {{ item.kondisi }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-slate-300">{{ item.lokasi }}</td>
+              <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded text-[11px] font-bold 
+                  {% if item.status == 'Tersedia' %}
+                    bg-emerald-950 text-emerald-300 border border-emerald-800
+                  {% elif item.status == 'Dipinjam' %}
+                    bg-sky-950 text-sky-300 border border-sky-800
+                  {% else %}
+                    bg-rose-950 text-rose-300 border border-rose-800
+                  {% endif %}">
+                  {{ item.status }}
+                </span>
+              </td>
+              {% if current_user and current_user.is_admin() %}
+              <td class="py-3 px-4 text-center">
+                <div class="inline-flex items-center space-x-1.5">
+                  {% if item.status != 'Disposal' %}
+                  <a href="{{ url_for('inventaris_disposal', id=item.id) }}" class="p-1.5 rounded hover:bg-[#253258] text-rose-400" title="Disposal / Hapus Aset">
+                    <i class="fa-solid fa-recycle text-xs"></i>
+                  </a>
+                  {% endif %}
+                  <form method="POST" action="{{ url_for('inventaris_hapus', id=item.id) }}" class="inline" onsubmit="return confirm('Hapus permanen barang ini?');">
+                    <button type="submit" class="p-1.5 rounded hover:bg-[#253258] text-slate-400 hover:text-rose-400" title="Hapus">
+                      <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="py-8 text-center text-slate-400 italic">
+                Belum ada data barang inventaris.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: PEMINJAMAN ASET -->
+  <div id="tabContent-pinjam" class="hidden space-y-4">
+    <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+      <div class="p-5 border-b border-[#1f2a4a] flex items-center justify-between">
+        <h4 class="text-sm font-bold text-white">Log Peminjaman Barang oleh Warga</h4>
+        <a href="{{ url_for('inventaris_pinjam') }}" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded-lg">
+          + Pinjam Barang Baru
+        </a>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px] border-b border-[#1f2a4a]">
+            <tr>
+              <th class="py-3 px-4">Nama Peminjam</th>
+              <th class="py-3 px-4">Barang Dipinjam</th>
+              <th class="py-3 px-4">Jumlah</th>
+              <th class="py-3 px-4">Tgl Pinjam - Rencana Kembali</th>
+              <th class="py-3 px-4">Keperluan</th>
+              <th class="py-3 px-4">Status</th>
+              {% if current_user and current_user.is_admin() %}
+              <th class="py-3 px-4 text-center">Aksi Pengurus</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1b2440]">
+            {% for p in peminjaman_list %}
+            <tr class="hover:bg-[#18213e]/60 transition-colors">
+              <td class="py-3 px-4">
+                <div class="font-bold text-white">{{ p.nama_peminjam }}</div>
+                <div class="text-[10px] text-emerald-400 font-mono">{{ p.no_hp }}</div>
+              </td>
+              <td class="py-3 px-4 font-semibold text-white">{{ p.barang.nama_barang }}</td>
+              <td class="py-3 px-4 font-bold text-indigo-400">{{ p.jumlah_pinjam }} {{ p.barang.satuan }}</td>
+              <td class="py-3 px-4">
+                <div>{{ p.tgl_pinjam.strftime('%d/%m/%Y') }} s.d {{ p.tgl_kembali_rencana.strftime('%d/%m/%Y') }}</div>
+              </td>
+              <td class="py-3 px-4 text-slate-300">{{ p.keperluan or '-' }}</td>
+              <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded text-[11px] font-bold 
+                  {% if p.status == 'Selesai' %}
+                    bg-emerald-950 text-emerald-300 border border-emerald-800
+                  {% elif p.status == 'Dipinjam' %}
+                    bg-sky-950 text-sky-300 border border-sky-800
+                  {% else %}
+                    bg-amber-950 text-amber-300 border border-amber-800
+                  {% endif %}">
+                  {{ p.status }}
+                </span>
+              </td>
+              {% if current_user and current_user.is_admin() %}
+              <td class="py-3 px-4 text-center">
+                {% if p.status == 'Dipinjam' %}
+                <form method="POST" action="{{ url_for('inventaris_kembali', id=p.id) }}" class="inline" onsubmit="return confirm('Konfirmasi pengembalian barang ini?');">
+                  <button type="submit" class="px-2 py-1 rounded bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-[10px]">
+                    <i class="fa-solid fa-check mr-1"></i> Kembalikan
+                  </button>
+                </form>
+                {% else %}
+                <span class="text-slate-500 text-[10px]">-</span>
+                {% endif %}
+              </td>
+              {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="py-8 text-center text-slate-400 italic">
+                Belum ada riwayat peminjaman barang.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: DISPOSAL ASET -->
+  <div id="tabContent-disposal" class="hidden space-y-4">
+    <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+      <div class="p-5 border-b border-[#1f2a4a]">
+        <h4 class="text-sm font-bold text-white">Penghapusan / Disposal Aset RT Rusak / Hilang</h4>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px] border-b border-[#1f2a4a]">
+            <tr>
+              <th class="py-3 px-4">Tanggal Disposal</th>
+              <th class="py-3 px-4">Nama Barang</th>
+              <th class="py-3 px-4">Alasan Penghapusan</th>
+              <th class="py-3 px-4">Metode Disposal</th>
+              <th class="py-3 px-4">Nilai Residu / Jual</th>
+              <th class="py-3 px-4">Disetujui Oleh</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1b2440]">
+            {% for d in disposal_list %}
+            <tr class="hover:bg-[#18213e]/60 transition-colors">
+              <td class="py-3 px-4 font-mono">{{ d.tgl_disposal.strftime('%d %B %Y') }}</td>
+              <td class="py-3 px-4 font-bold text-white">{{ d.barang.nama_barang }}</td>
+              <td class="py-3 px-4 text-slate-300">{{ d.alasan }}</td>
+              <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] bg-rose-950/80 text-rose-300 border border-rose-800">
+                  {{ d.metode }}
+                </span>
+              </td>
+              <td class="py-3 px-4 font-mono font-bold text-emerald-400">
+                Rp {{ "{:,.0f}".format(d.nilai_residu).replace(',', '.') }}
+              </td>
+              <td class="py-3 px-4 text-slate-300">{{ d.disetujui_oleh }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="py-8 text-center text-slate-400 italic">
+                Belum ada aset yang dihapuskan / disposal.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchTab(tab) {
+    const tabs = ['aset', 'pinjam', 'disposal'];
+    tabs.forEach(t => {
+      const btn = document.getElementById('tabBtn-' + t);
+      const content = document.getElementById('tabContent-' + t);
+      if (t === tab) {
+        btn.className = 'px-4 py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white transition-all';
+        content.classList.remove('hidden');
+      } else {
+        btn.className = 'px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] transition-all';
+        content.classList.add('hidden');
+      }
+    });
+  }
+</script>
+{% endblock %}

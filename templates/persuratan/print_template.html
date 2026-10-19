@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>{{ surat.jenis_surat }} - {{ surat.warga.nama }}</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      color: #000;
+      background: #fff;
+      padding: 40px 60px;
+      line-height: 1.5;
+      font-size: 13pt;
+    }
+
+    .header {
+      text-align: center;
+      border-bottom: 3px double #000;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 16pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .header h3 {
+      margin: 3px 0;
+      font-size: 14pt;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .header p {
+      margin: 2px 0;
+      font-size: 10pt;
+    }
+
+    .surat-title {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .surat-title h4 {
+      margin: 0;
+      font-size: 14pt;
+      font-weight: bold;
+      text-decoration: underline;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .surat-title p {
+      margin: 4px 0 0 0;
+      font-size: 11pt;
+    }
+
+    .content-body {
+      text-align: justify;
+      margin-bottom: 20px;
+    }
+
+    .data-table {
+      width: 100%;
+      margin: 15px 0 20px 25px;
+      border-collapse: collapse;
+    }
+
+    .data-table td {
+      padding: 3px 0;
+      vertical-align: top;
+      font-size: 12.5pt;
+    }
+
+    .data-table td.label {
+      width: 200px;
+    }
+
+    .data-table td.colon {
+      width: 15px;
+    }
+
+    .closing-text {
+      text-align: justify;
+      margin-top: 15px;
+    }
+
+    .signature-section {
+      margin-top: 40px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .sig-box {
+      text-align: center;
+      width: 250px;
+    }
+
+    .sig-space {
+      height: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stamp-badge {
+      border: 2px solid #1e3a8a;
+      color: #1e3a8a;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 9pt;
+      font-weight: bold;
+      transform: rotate(-5deg);
+      opacity: 0.85;
+    }
+
+    .name-line {
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 2px;
+    }
+
+    .no-print {
+      margin-bottom: 30px;
+      padding: 12px;
+      background: #e2e8f0;
+      text-align: center;
+      border-radius: 8px;
+    }
+
+    .btn-print {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+
+      body {
+        padding: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="no-print">
+    <button class="btn-print" onclick="window.print()">Cetak Dokumen Surat (PDF)</button>
+  </div>
+
+  <!-- Kop Surat Resmi -->
+  <div class="header" style="display:flex; align-items:center; justify-content:space-between; border-bottom:none; padding-bottom:8px; margin-bottom:0; text-align:left;">
+    <div style="width:75px; height:75px; flex-shrink:0;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="75" height="75">
+        <polygon points="50,4 92,20 92,62 50,96 8,62 8,20" fill="#1e1b4b" stroke="#d97706" stroke-width="3" />
+        <polygon points="50,12 84,25 84,58 50,86 16,58 16,25" fill="#ffffff" stroke="#1e1b4b" stroke-width="1.5" />
+        <circle cx="50" cy="50" r="18" fill="#d97706" />
+        <text x="50" y="55" font-family="'Segoe UI', Arial, sans-serif" font-size="12" font-weight="900" fill="#ffffff" text-anchor="middle">RT09</text>
+      </svg>
+    </div>
+    <div style="flex:1; text-align:center; padding:0 15px;">
+      <h3 style="margin:0; font-size:12pt; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">PEMERINTAH KABUPATEN {{ kota | upper }}</h3>
+      <h4 style="margin:2px 0; font-size:11pt; font-weight:bold; text-transform:uppercase;">KECAMATAN {{ kecamatan | upper }} - KELURAHAN {{ kelurahan | upper }}</h4>
+      <h2 style="margin:2px 0; font-size:15pt; font-weight:900; letter-spacing:1.5px; text-transform:uppercase;">RUKUN TETANGGA {{ nama_rt.replace('RT', '').strip() }} / RUKUN WARGA {{ nama_rw.replace('RW', '').strip() }}</h2>
+      <p style="margin:2px 0 0 0; font-size:9.5pt; color:#333;">
+        Sekretariat: Perumahan De Naila Village Blok G, Kode Pos {{ kode_pos }} | Kontak / WhatsApp: {{ no_hp_rt }}
+      </p>
+    </div>
+    <div style="width:75px; height:75px; flex-shrink:0;"></div>
+  </div>
+
+  <!-- Garis Ganda Tata Naskah Dinas -->
+  <div style="border-top: 3px solid #000; border-bottom: 1px solid #000; height: 3px; margin: 4px 0 25px 0;"></div>
+
+  <!-- Judul Surat & Nomor -->
+  <div class="surat-title">
+    <h4>{{ surat.jenis_surat }}</h4>
+    <p>Nomor: {{ surat.nomor_surat }}</p>
+  </div>
+
+  <div class="content-body">
+    <p>Yang bertanda tangan di bawah ini, Pengurus {{ nama_rt }} / {{ nama_rw }} Kelurahan {{ kelurahan }},
+      Kecamatan {{ kecamatan }}, Kota {{ kota }}, dengan ini menerangkan bahwa:</p>
+
+    <!-- Tabel Data Warga -->
+    <table class="data-table">
+      <tr>
+        <td class="label">Nama Lengkap</td>
+        <td class="colon">:</td>
+        <td><strong>{{ surat.warga.nama }}</strong></td>
+      </tr>
+      <tr>
+        <td class="label">NIK</td>
+        <td class="colon">:</td>
+        <td>{{ surat.warga.nik }}</td>
+      </tr>
+      <tr>
+        <td class="label">Nomor KK</td>
+        <td class="colon">:</td>
+        <td>{{ surat.warga.no_kk }}</td>
+      </tr>
+      <tr>
+        <td class="label">Tempat / Tanggal Lahir</td>
+        <td class="colon">:</td>
+        <td>{{ surat.warga.tempat_lahir or '-' }}, {{ surat.warga.tanggal_lahir.strftime('%d %B %Y') if
+          surat.warga.tanggal_lahir else '-' }}</td>
+      </tr>
+      <tr>
+        <td class="label">Jenis Kelamin</td>
+        <td class="colon">:</td>
+        <td>{{ surat.warga.jenis_kelamin }}</td>
+      </tr>
+      <tr>
+        <td class="label">Agama / Pekerjaan</td>
+        <td class="colon">:</td>
+        <td>{{ surat.warga.agama }} / {{ surat.warga.pekerjaan or '-' }}</td>
+      </tr>
+      <tr>
+        <td class="label">Status Tempat Tinggal</td>
+        <td class="colon">:</td>
+        <td>Warga {{ surat.warga.status_tinggal }} (No. Rumah: {{ surat.warga.no_rumah }})</td>
+      </tr>
+      <tr>
+        <td class="label">Alamat Sesuai KTP / KK</td>
+        <td class="colon">:</td>
+        <td>{{ surat.warga.alamat }}</td>
+      </tr>
+
+      {% if extra_data %}
+      {% for k, v in extra_data.items() %}
+      <tr>
+        <td class="label">{{ k.replace('extra_', '').replace('_', ' ').title() }}</td>
+        <td class="colon">:</td>
+        <td><strong>{{ v }}</strong></td>
+      </tr>
+      {% endfor %}
+      {% endif %}
+    </table>
+
+    <p>Orang tersebut di atas adalah benar-benar warga yang bertempat tinggal di lingkungan {{ nama_rt }} / {{ nama_rw }} Kelurahan
+      {{ kelurahan }}, Kecamatan {{ kecamatan }}, dan berkelakuan baik dalam kehidupan bermasyarakat.</p>
+
+    <p>Surat keterangan ini diterbitkan atas permohonan yang bersangkutan untuk keperluan:<br>
+      <strong>"{{ surat.keperluan }}"</strong>
+    </p>
+
+    <p class="closing-text">Demikian surat keterangan ini kami buat dengan sebenarnya dan agar dapat dipergunakan
+      sebagaimana mestinya oleh pihak yang berkepentingan.</p>
+  </div>
+
+  <!-- Signatures & Verification Section -->
+  <div class="signature-section" style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:35px;">
+    <!-- QR Verifikasi Digital -->
+    <div style="display:flex; align-items:center; gap:10px; border:1px solid #94a3b8; padding:8px 12px; border-radius:6px; max-width:310px;">
+      <svg viewBox="0 0 100 100" width="55" height="55" style="flex-shrink:0;">
+        <rect width="100" height="100" fill="#ffffff"/>
+        <rect x="6" y="6" width="26" height="26" fill="#000"/>
+        <rect x="10" y="10" width="18" height="18" fill="#fff"/>
+        <rect x="14" y="14" width="10" height="10" fill="#000"/>
+        <rect x="68" y="6" width="26" height="26" fill="#000"/>
+        <rect x="72" y="10" width="18" height="18" fill="#fff"/>
+        <rect x="76" y="14" width="10" height="10" fill="#000"/>
+        <rect x="6" y="68" width="26" height="26" fill="#000"/>
+        <rect x="10" y="72" width="18" height="18" fill="#fff"/>
+        <rect x="14" y="76" width="10" height="10" fill="#000"/>
+        <rect x="40" y="20" width="8" height="8" fill="#000"/>
+        <rect x="50" y="40" width="10" height="10" fill="#000"/>
+        <rect x="70" y="50" width="10" height="8" fill="#000"/>
+        <rect x="40" y="70" width="12" height="10" fill="#000"/>
+      </svg>
+      <div style="font-size:9pt; line-height:1.3; color:#333;">
+        <strong>VERIFIKASI SAH DIGITAL</strong><br>
+        Dokumen {{ surat.nomor_surat }} diterbitkan sah oleh Portal {{ nama_rt }}.
+      </div>
+    </div>
+
+    <!-- Box Tanda Tangan -->
+    <div class="sig-box" style="position:relative; width:220px; text-align:center;">
+      <p>{{ kota }}, {{ today_formal }}<br>Ketua {{ nama_rt }} / {{ nama_rw }}</p>
+      <div class="sig-space" style="height:75px; position:relative; display:flex; align-items:center; justify-content:center;">
+        <!-- Stempel Basah Paguyuban RT -->
+        <svg viewBox="0 0 160 160" width="105" height="105" style="position:absolute; left:-20px; top:-10px; transform:rotate(-8deg); opacity:0.85; z-index:1; pointer-events:none;">
+          <defs>
+            <path id="suratStampTop" d="M 22,80 A 58,58 0 0,1 138,80" fill="none" />
+            <path id="suratStampBottom" d="M 138,80 A 58,58 0 0,1 22,80" fill="none" />
+          </defs>
+          <circle cx="80" cy="80" r="74" fill="none" stroke="#253580" stroke-width="2.5" />
+          <circle cx="80" cy="80" r="70" fill="none" stroke="#253580" stroke-width="1.2" />
+          <circle cx="80" cy="80" r="46" fill="none" stroke="#253580" stroke-width="1.5" />
+          <text font-family="'Arial Black', Arial, sans-serif" font-size="9" font-weight="900" fill="#253580" letter-spacing="1.5">
+            <textPath href="#suratStampTop" startOffset="50%" text-anchor="middle">PAGUYUBAN WARGA RT 09</textPath>
+          </text>
+          <text font-family="'Arial Black', Arial, sans-serif" font-size="8" font-weight="900" fill="#253580" letter-spacing="1.5">
+            <textPath href="#suratStampBottom" startOffset="50%" text-anchor="middle">* KEL. MOJOSARIREJO *</textPath>
+          </text>
+          <!-- CAP & TTD DIGITAL RESMI -->
+          <text x="80" y="69" font-family="'Arial Black', Arial, sans-serif" font-size="8" font-weight="bold" fill="#253580" text-anchor="middle">KEC. DRIYOREJO</text>
+          <line x1="50" y1="73" x2="110" y2="73" stroke="#253580" stroke-width="1" />
+          <text x="80" y="85" font-family="'Arial Black', Arial, sans-serif" font-size="11" font-weight="900" fill="#253580" text-anchor="middle">PENGURUS</text>
+          <line x1="50" y1="89" x2="110" y2="89" stroke="#253580" stroke-width="1" />
+          <text x="80" y="99" font-family="'Arial Black', Arial, sans-serif" font-size="8" font-weight="bold" fill="#253580" text-anchor="middle">RW 14 GRESIK</text>
+        </svg>
+
+        <!-- Vector Signature of Ketua RT -->
+        <svg viewBox="0 0 200 90" width="135" height="55" style="position:absolute; top:8px; left:25px; z-index:2; pointer-events:none;">
+          <path d="M 20,65 C 28,30 35,15 48,22 C 58,28 35,75 52,68 C 65,62 80,35 90,42 C 100,50 92,68 110,55 C 125,44 140,48 155,42 C 165,38 178,45 185,38 M 30,52 Q 90,48 175,45 M 65,30 L 65,72 M 130,35 L 140,68" 
+                fill="none" stroke="#0f172a" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <p class="name-line">( {{ nama_ketua | upper }} )</p>
+      <p style="font-size: 10pt; margin: 0; color:#555;">Ketua {{ nama_rt }} / {{ nama_rw }}</p>
+    </div>
+  </div>
+
+</body>
+
+</html>

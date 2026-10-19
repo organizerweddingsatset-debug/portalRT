@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Disposal Aset RT - Portal RT 09{% endblock %}
+{% block page_title %}Penghapusan / Disposal Aset RT{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('inventaris_index') }}" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1.5">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Kembali ke Inventaris</span>
+    </a>
+  </div>
+
+  <div class="card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+    
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a]">
+      <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+        <i class="fa-solid fa-recycle text-rose-400"></i>
+        <span>Form Berita Acara Disposal Aset</span>
+      </h3>
+      <p class="text-xs text-slate-400 mt-1">Penghapusan aset yang sudah rusak berat, hilang, atau tidak bernilai ekonomis.</p>
+    </div>
+
+    <form method="POST" class="space-y-4">
+      
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Barang yang Akan Dihapuskan</label>
+        <input type="text" readonly value="{{ barang.nama_barang }} (Kode: {{ barang.kode_barang }})" class="dark-input bg-[#0d1224] text-slate-300 font-bold">
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Tanggal Disposal *</label>
+          <input type="date" name="tgl_disposal" value="{{ today_str }}" required class="dark-input">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Metode Disposal *</label>
+          <select name="metode" required class="dark-input">
+            <option value="Dibuang / Rusak Total">Dibuang / Rusak Total (Musnah)</option>
+            <option value="Dilelang / Dijual">Dilelang / Dijual Rombeng (Kas RT)</option>
+            <option value="Dihibahkan">Dihibahkan ke Pihak Lain</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nilai Residu / Penerimaan Penjualan (Rp)</label>
+          <input type="number" name="nilai_residu" value="0" step="1000" class="dark-input font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Alasan Penghapusan / Kerusakan *</label>
+        <textarea name="alasan" rows="3" required placeholder="Jelaskan penyebab kerusakan atau kondisi barang..." class="dark-input"></textarea>
+      </div>
+
+      <div class="pt-4 border-t border-[#1f2a4a] flex items-center justify-end space-x-3">
+        <a href="{{ url_for('inventaris_index') }}" class="px-4 py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e]">
+          Batal
+        </a>
+        <button type="submit" class="px-6 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md">
+          Konfirmasi Penghapusan Aset
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+{% endblock %}

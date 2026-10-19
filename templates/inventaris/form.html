@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Pengadaan Aset Baru - Portal RT 09{% endblock %}
+{% block page_title %}Pengadaan Aset / Inventaris RT{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('inventaris_index') }}" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1.5">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Kembali ke Daftar Inventaris</span>
+    </a>
+  </div>
+
+  <div class="card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+    
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a]">
+      <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+        <i class="fa-solid fa-cart-plus text-indigo-400"></i>
+        <span>Pencatatan Pengadaan Barang Baru</span>
+      </h3>
+      <p class="text-xs text-slate-400 mt-1">Registrasi aset milik RT 09 untuk pencatatan inventaris dan pengawasan peminjaman.</p>
+    </div>
+
+    <form method="POST" class="space-y-4">
+      
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Nama Barang / Aset *</label>
+        <input type="text" name="nama_barang" required placeholder="Contoh: Genset Portable 3000 Watt / Tenda Lipat"
+               class="dark-input">
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kategori Barang *</label>
+          <select name="kategori" required class="dark-input">
+            <option value="Elektronik / Audio">Elektronik / Audio / Listrik</option>
+            <option value="Tenda & Kursi">Tenda, Kursi & Meja</option>
+            <option value="Alat Kebersihan">Peralatan Kebersihan & Taman</option>
+            <option value="Peralatan Masak">Peralatan Dapur / Masak Paguyuban</option>
+            <option value="Keamanan / Pos Ronda">Keamanan, Ronda & Senter</option>
+            <option value="Lain-lain">Lain-lain</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Lokasi Penyimpanan</label>
+          <input type="text" name="lokasi" value="Gudang RT 09" required class="dark-input">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Jumlah</label>
+          <input type="number" name="jumlah" value="1" min="1" required class="dark-input font-bold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Satuan</label>
+          <input type="text" name="satuan" value="Unit" placeholder="Unit, Buah, Set, Pcs" required class="dark-input">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kondisi Awal</label>
+          <select name="kondisi" class="dark-input">
+            <option value="Baik" selected>Baik (100% Berfungsi Normal)</option>
+            <option value="Rusak Ringan">Rusak Ringan</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Tanggal Pengadaan</label>
+          <input type="date" name="tgl_pengadaan" value="{{ today_str }}" class="dark-input">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-slate-300 mb-1">Biaya / Nilai Perolehan (Rp)</label>
+          <input type="number" name="nilai_perolehan" step="1000" placeholder="0" class="dark-input font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Catatan Tambahan</label>
+        <textarea name="catatan" rows="2" placeholder="Keterangan nomor seri, asal pengadaan (hibah/kas), dll" class="dark-input"></textarea>
+      </div>
+
+      <div class="pt-4 border-t border-[#1f2a4a] flex items-center justify-end space-x-3">
+        <a href="{{ url_for('inventaris_index') }}" class="px-4 py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e]">
+          Batal
+        </a>
+        <button type="submit" class="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
+          Simpan Data Pengadaan
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+nik,no_kk,nama,jenis_kelamin,tempat_lahir,tanggal_lahir,agama,pekerjaan,status_perkawinan,status_keluarga,status_tinggal,no_rumah,alamat,no_hp,email
+3175040101900001,3175040101900000,Contoh Warga Baru,Laki-laki,Jakarta,1990-01-01,Islam,Karyawan Swasta,Kawin,Kepala Keluarga,Tetap,A3/09,Jl. Melati No. 09 RT 09 RW 14,081299998888,warga.baru@example.com
+3175040202920002,3175040101900000,Contoh Istri Warga,Perempuan,Bandung,1992-02-02,Islam,Ibu Rumah Tangga,Kawin,Istri,Tetap,A3/09,Jl. Melati No. 09 RT 09 RW 14,081299997777,istri.warga@example.com

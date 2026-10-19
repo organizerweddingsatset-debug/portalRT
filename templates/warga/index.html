@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_own_view %}Data Keluarga Saya{% else %}Data Kependudukan Warga RT 09{% endif %}{% endblock %}
+{% block page_title %}{% if is_own_view %}Data Kependudukan Keluarga Saya{% else %}Data Warga RT 09{% endif %}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  {% if is_own_view %}
+  <!-- Banner Khusus Warga: Own View & Edit -->
+  <div class="card-glow rounded-xl p-5 border border-indigo-500/40 bg-gradient-to-r from-[#141b35] to-[#1a1c3d] flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex items-center space-x-3.5">
+      <div class="w-12 h-12 rounded-xl bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-400 text-xl shrink-0">
+        <i class="fa-solid fa-house-chimney-user"></i>
+      </div>
+      <div>
+        <h3 class="text-sm md:text-base font-bold text-white">Data Kependudukan Keluarga Anda</h3>
+        <p class="text-xs text-slate-300 mt-0.5">
+          Nomor KK: <strong class="text-white font-mono">{{ current_user.warga.no_kk }}</strong> &bull; Rumah: <strong class="text-indigo-300">{{ current_user.warga.no_rumah or '-' }}</strong>. Anda dapat melihat dan memperbarui data profil Anda serta anggota keluarga Anda secara mandiri.
+        </p>
+      </div>
+    </div>
+    {% if current_user.warga %}
+    <a href="{{ url_for('warga_edit', id=current_user.warga.id) }}" class="shrink-0 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all flex items-center space-x-1.5">
+      <i class="fa-solid fa-pen-to-square"></i>
+      <span>Edit Data Profil Saya</span>
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Header & Stats Summary -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1">{% if is_own_view %}Anggota Keluarga{% else %}Total Warga{% endif %}</div>
+      <div class="text-2xl font-black text-white font-mono">{{ total_warga }}</div>
+      <div class="text-[11px] text-indigo-400 mt-1">{% if is_own_view %}Terdaftar di KK Anda{% else %}Terdata aktif di RT 09{% endif %}</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1">Kepala Keluarga</div>
+      <div class="text-2xl font-black text-emerald-400 font-mono">{{ total_kk }}</div>
+      <div class="text-[11px] text-slate-400 mt-1">Kartu Keluarga (KK)</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1">Warga Tetap</div>
+      <div class="text-2xl font-black text-sky-400 font-mono">{{ total_tetap }}</div>
+      <div class="text-[11px] text-slate-400 mt-1">Domisili menetap</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1">Warga Kontrak / Kost</div>
+      <div class="text-2xl font-black text-amber-400 font-mono">{{ total_kontrak }}</div>
+      <div class="text-[11px] text-slate-400 mt-1">Domisili sementara</div>
+    </div>
+  </div>
+
+  <!-- Table Container -->
+  <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+    
+    <!-- Controls Bar -->
+    <div class="p-5 border-b border-[#1f2a4a] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      
+      {% if not is_own_view %}
+      <!-- Search & Filters for Admin -->
+      <form method="GET" action="{{ url_for('warga_index') }}" class="flex flex-wrap items-center gap-2.5 flex-1">
+        <div class="relative min-w-[240px] flex-1">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </span>
+          <input type="text" name="q" value="{{ request.args.get('q', '') }}" 
+                 placeholder="Cari nama, NIK, No KK, no rumah..." 
+                 class="dark-input pl-8 py-2 text-xs">
+        </div>
+
+        <select name="status_tinggal" class="dark-input py-2 text-xs w-auto">
+          <option value="">Semua Status Tinggal</option>
+          <option value="Tetap" {% if request.args.get('status_tinggal') == 'Tetap' %}selected{% endif %}>Warga Tetap</option>
+          <option value="Kontrak" {% if request.args.get('status_tinggal') == 'Kontrak' %}selected{% endif %}>Warga Kontrak</option>
+          <option value="Kost" {% if request.args.get('status_tinggal') == 'Kost' %}selected{% endif %}>Warga Kost</option>
+        </select>
+
+        <select name="status_keluarga" class="dark-input py-2 text-xs w-auto">
+          <option value="">Semua Status Keluarga</option>
+          <option value="Kepala Keluarga" {% if request.args.get('status_keluarga') == 'Kepala Keluarga' %}selected{% endif %}>Kepala Keluarga</option>
+          <option value="Istri" {% if request.args.get('status_keluarga') == 'Istri' %}selected{% endif %}>Istri</option>
+          <option value="Anak" {% if request.args.get('status_keluarga') == 'Anak' %}selected{% endif %}>Anak</option>
+        </select>
+
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors">
+          Filter
+        </button>
+        {% if request.args.get('q') or request.args.get('status_tinggal') or request.args.get('status_keluarga') %}
+        <a href="{{ url_for('warga_index') }}" class="text-xs text-slate-400 hover:text-white px-2 py-2">
+          Reset
+        </a>
+        {% endif %}
+      </form>
+
+      <!-- Action Buttons for Admin -->
+      <div class="flex items-center space-x-2 shrink-0">
+        <a href="{{ url_for('warga_export') }}" class="text-xs bg-[#19223e] hover:bg-[#232f53] text-slate-200 border border-[#2b3964] font-medium px-3 py-2 rounded-lg transition-colors">
+          <i class="fa-solid fa-file-excel mr-1 text-emerald-400"></i> Export CSV
+        </a>
+        {% if current_user and current_user.is_admin() %}
+        <a href="{{ url_for('warga_tambah') }}" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3.5 py-2 rounded-lg shadow-sm transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-user-plus text-xs"></i>
+          <span>Tambah Warga</span>
+        </a>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="text-xs text-slate-300 font-semibold flex items-center space-x-2">
+        <i class="fa-solid fa-users text-indigo-400"></i>
+        <span>Daftar Anggota Keluarga Terdaftar di Portal</span>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Data Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-300">
+        <thead class="bg-[#0f152a] text-slate-400 uppercase tracking-wider text-[11px] border-b border-[#1f2a4a]">
+          <tr>
+            <th class="py-3 px-4">Nama & NIK</th>
+            <th class="py-3 px-4">No. Rumah</th>
+            <th class="py-3 px-4">JK / Usia</th>
+            <th class="py-3 px-4">Status Hubungan</th>
+            <th class="py-3 px-4">Status Tinggal</th>
+            <th class="py-3 px-4">Kontak / WA</th>
+            <th class="py-3 px-4 text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#1b2440]">
+          {% for w in warga_list %}
+          <tr class="hover:bg-[#18213e]/60 transition-colors {% if current_user and current_user.warga_id == w.id %}bg-indigo-950/20{% endif %}">
+            <td class="py-3 px-4">
+              <a href="{{ url_for('warga_detail', id=w.id) }}" class="font-bold text-white hover:text-indigo-400 transition-colors">
+                {{ w.nama }}
+              </a>
+              {% if current_user and current_user.warga_id == w.id %}
+              <span class="ml-1 text-[10px] px-1.5 py-0.2 rounded bg-indigo-600 text-white font-medium">Akun Anda</span>
+              {% endif %}
+              <div class="text-[11px] text-slate-400 font-mono mt-0.5">NIK: {{ w.nik }}</div>
+            </td>
+            <td class="py-3 px-4 font-semibold text-slate-200">
+              <span class="px-2 py-0.5 rounded bg-[#10172d] border border-[#212d50] text-indigo-300">
+                {{ w.no_rumah or '-' }}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              <div>{{ w.jenis_kelamin }}</div>
+              <div class="text-[11px] text-slate-400">{{ w.agama }}</div>
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-[11px] font-medium 
+                {% if w.status_keluarga == 'Kepala Keluarga' %}
+                  bg-purple-950/80 text-purple-300 border border-purple-800
+                {% elif w.status_keluarga == 'Istri' %}
+                  bg-rose-950/80 text-rose-300 border border-rose-800
+                {% else %}
+                  bg-slate-800 text-slate-300 border border-slate-700
+                {% endif %}">
+                {{ w.status_keluarga }}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-[11px] font-medium 
+                {% if w.status_tinggal == 'Tetap' %}
+                  bg-emerald-950/80 text-emerald-300 border border-emerald-800
+                {% else %}
+                  bg-amber-950/80 text-amber-300 border border-amber-800
+                {% endif %}">
+                {{ w.status_tinggal }}
+              </span>
+            </td>
+            <td class="py-3 px-4 font-mono text-[11px]">
+              {% if w.no_hp %}
+              <a href="https://wa.me/{{ w.no_hp.replace('-', '').replace(' ', '') }}" target="_blank" class="text-emerald-400 hover:underline flex items-center space-x-1">
+                <i class="fa-brands fa-whatsapp"></i>
+                <span>{{ w.no_hp }}</span>
+              </a>
+              {% else %}
+              <span class="text-slate-500">-</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="inline-flex items-center space-x-1">
+                <a href="{{ url_for('warga_detail', id=w.id) }}" class="p-1.5 rounded hover:bg-[#253258] text-slate-300 hover:text-indigo-300" title="Detail Warga">
+                  <i class="fa-solid fa-eye text-xs"></i>
+                </a>
+                
+                <!-- Edit button allowed for Admin OR OWN family view -->
+                {% if current_user and (current_user.is_admin() or is_own_view or current_user.warga_id == w.id) %}
+                <a href="{{ url_for('warga_edit', id=w.id) }}" class="p-1.5 rounded hover:bg-[#253258] text-slate-300 hover:text-amber-300" title="Ubah Data">
+                  <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </a>
+                {% endif %}
+
+                {% if current_user and current_user.is_admin() %}
+                <form method="POST" action="{{ url_for('warga_hapus', id=w.id) }}" class="inline" onsubmit="return confirm('Hapus data warga {{ w.nama }}?');">
+                  <button type="submit" class="p-1.5 rounded hover:bg-[#253258] text-slate-300 hover:text-rose-400" title="Hapus">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="py-8 text-center text-slate-400 italic">
+              Tidak ada data warga yang cocok dengan kriteria pencarian.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table Footer / Count -->
+    <div class="p-4 border-t border-[#1f2a4a] text-xs text-slate-400 flex items-center justify-between">
+      <span>Menampilkan <strong>{{ warga_list|length }}</strong> data anggota</span>
+      <span>RT 09 / RW 14</span>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Kas & Keuangan {{ nama_rt }} / {{ nama_rw }} - {{ periode_judul }}</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      color: #0f172a;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 30px 15px;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    /* Print Paper Container */
+    .paper-sheet {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px 50px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      position: relative;
+    }
+
+    /* Interactive Top Control Bar */
+    .controls-bar {
+      max-width: 960px;
+      margin: 0 auto 20px auto;
+      background: #ffffff;
+      padding: 14px 20px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .form-select {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      color: #1e293b;
+      outline: none;
+    }
+
+    .form-select:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: #4f46e5;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #4338ca;
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+
+    .btn-outline {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+    }
+
+    .btn-outline:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    /* Kop Surat Resmi Indonesia */
+    .kop-surat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      position: relative;
+    }
+
+    .kop-logo {
+      width: 78px;
+      height: 78px;
+      flex-shrink: 0;
+    }
+
+    .kop-center {
+      text-align: center;
+      flex: 1;
+      padding: 0 15px;
+    }
+
+    .kop-sub1 {
+      margin: 0;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #334155;
+      text-transform: uppercase;
+    }
+
+    .kop-sub2 {
+      margin: 2px 0;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      color: #475569;
+      text-transform: uppercase;
+    }
+
+    .kop-title {
+      margin: 3px 0;
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .kop-address {
+      margin: 3px 0 0 0;
+      font-size: 10.5px;
+      color: #64748b;
+      line-height: 1.35;
+    }
+
+    /* Tata Naskah Dinas Separator Rule */
+    .kop-divider {
+      border-top: 3px solid #0f172a;
+      border-bottom: 1px solid #0f172a;
+      height: 4px;
+      margin: 8px 0 20px 0;
+    }
+
+    /* Judul & Info Dokumen */
+    .doc-header {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .doc-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #1e1b4b;
+      text-decoration: underline;
+    }
+
+    .doc-period {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4338ca;
+    }
+
+    .doc-meta {
+      margin: 3px 0 0 0;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    /* Executive KPI Financial Cards */
+    .kpi-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .kpi-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      position: relative;
+    }
+
+    .kpi-card.highlight {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+    }
+
+    .kpi-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .kpi-val {
+      font-size: 15px;
+      font-weight: 800;
+      font-family: 'Consolas', monospace;
+    }
+
+    .val-pemasukan {
+      color: #047857;
+    }
+
+    .val-pengeluaran {
+      color: #b91c1c;
+    }
+
+    .val-saldo {
+      color: #3730a3;
+    }
+
+    .val-status {
+      color: #0284c7;
+      font-size: 13px;
+    }
+
+    /* Tabel Mutasi Kas */
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 22px;
+      font-size: 11.5px;
+    }
+
+    .ledger-table th {
+      background: #1e293b;
+      color: #ffffff;
+      padding: 8px 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 10.5px;
+      letter-spacing: 0.5px;
+      border: 1px solid #1e293b;
+    }
+
+    .ledger-table td {
+      padding: 7px 10px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    .ledger-table tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    .col-center {
+      text-align: center;
+    }
+
+    .col-right {
+      text-align: right;
+    }
+
+    .badge-jenis {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-masuk {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-keluar {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .table-total-row {
+      background: #f1f5f9 !important;
+      font-weight: 800;
+      border-top: 2px solid #334155;
+      border-bottom: 3px double #334155;
+    }
+
+    /* Footer Tanda Tangan & QR Audit */
+    .signatures-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 30px;
+      page-break-inside: avoid;
+    }
+
+    /* QR Code & Security Audit Box */
+    .audit-box {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 340px;
+    }
+
+    .audit-qr {
+      width: 65px;
+      height: 65px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 3px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .audit-text {
+      font-size: 10px;
+      color: #475569;
+      line-height: 1.35;
+    }
+
+    .audit-text strong {
+      color: #0f172a;
+      display: block;
+      margin-bottom: 2px;
+      font-size: 10.5px;
+    }
+
+    .audit-badge {
+      display: inline-block;
+      margin-top: 3px;
+      background: #ecfdf5;
+      color: #047857;
+      font-weight: 700;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 9px;
+      border: 1px solid #a7f3d0;
+    }
+
+    /* Signatures Block */
+    .sign-group {
+      display: flex;
+      gap: 40px;
+      text-align: center;
+    }
+
+    .sign-box {
+      width: 210px;
+      position: relative;
+    }
+
+    .sign-box p {
+      margin: 0;
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+
+    .sign-area {
+      height: 80px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SVG Signatures & Stempel */
+    .vector-signature {
+      position: absolute;
+      top: 5px;
+      left: 20px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .stempel-rt {
+      position: absolute;
+      left: -25px;
+      top: -15px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .sign-name {
+      font-weight: 800;
+      text-decoration: underline;
+      color: #0f172a;
+      margin-top: 2px;
+      font-size: 12px;
+    }
+
+    .sign-role {
+      font-size: 10.5px;
+      color: #64748b;
+    }
+
+    /* Media Print Optimization */
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+        color: #000000;
+      }
+
+      .controls-bar {
+        display: none !important;
+      }
+
+      .paper-sheet {
+        border: none;
+        box-shadow: none;
+        padding: 10px 15px;
+        max-width: 100%;
+        border-radius: 0;
+      }
+
+      .ledger-table th {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .kpi-card {
+        border-color: #94a3b8 !important;
+      }
+
+      .table-total-row {
+        background: #f1f5f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Controls Bar (No Print) -->
+  <div class="controls-bar">
+    <div class="filter-group">
+      <a href="{{ url_for('kas_index') }}" class="btn btn-secondary">
+        &larr; Menu Kas
+      </a>
+
+      <!-- Filter Periode Form -->
+      <form method="GET" action="{{ url_for('kas_laporan') }}" class="filter-group">
+        <select name="bulan" class="form-select">
+          <option value="">Semua Bulan</option>
+          <option value="1" {% if filter_bulan == 1 %}selected{% endif %}>Januari</option>
+          <option value="2" {% if filter_bulan == 2 %}selected{% endif %}>Februari</option>
+          <option value="3" {% if filter_bulan == 3 %}selected{% endif %}>Maret</option>
+          <option value="4" {% if filter_bulan == 4 %}selected{% endif %}>April</option>
+          <option value="5" {% if filter_bulan == 5 %}selected{% endif %}>Mei</option>
+          <option value="6" {% if filter_bulan == 6 %}selected{% endif %}>Juni</option>
+          <option value="7" {% if filter_bulan == 7 %}selected{% endif %}>Juli</option>
+          <option value="8" {% if filter_bulan == 8 %}selected{% endif %}>Agustus</option>
+          <option value="9" {% if filter_bulan == 9 %}selected{% endif %}>September</option>
+          <option value="10" {% if filter_bulan == 10 %}selected{% endif %}>Oktober</option>
+          <option value="11" {% if filter_bulan == 11 %}selected{% endif %}>November</option>
+          <option value="12" {% if filter_bulan == 12 %}selected{% endif %}>Desember</option>
+        </select>
+
+        <select name="tahun" class="form-select">
+          <option value="2026" {% if filter_tahun == 2026 or not filter_tahun %}selected{% endif %}>Tahun 2026</option>
+          <option value="2025" {% if filter_tahun == 2025 %}selected{% endif %}>Tahun 2025</option>
+          <option value="" {% if filter_tahun == '' %}selected{% endif %}>Semua Tahun</option>
+        </select>
+
+        <select name="jenis" class="form-select">
+          <option value="">Semua Arus Kas</option>
+          <option value="Pemasukan" {% if filter_jenis == 'Pemasukan' %}selected{% endif %}>Pemasukan Saja</option>
+          <option value="Pengeluaran" {% if filter_jenis == 'Pengeluaran' %}selected{% endif %}>Pengeluaran Saja</option>
+        </select>
+
+        <button type="submit" class="btn btn-outline">
+          Terapkan Filter
+        </button>
+      </form>
+    </div>
+
+    <div>
+      <button onclick="window.print()" class="btn btn-primary">
+        <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+          <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+        </svg>
+        Cetak Laporan PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Sheet Paper Content -->
+  <div class="paper-sheet">
+
+    <!-- Kop Surat Resmi Format Naskah Dinas -->
+    <div class="kop-surat">
+      <!-- Logo Lambang RT / Kabupaten -->
+      <div class="kop-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="78" height="78">
+          <defs>
+            <linearGradient id="crestGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4338ca" />
+              <stop offset="100%" stop-color="#1e1b4b" />
+            </linearGradient>
+          </defs>
+          <polygon points="50,4 92,20 92,62 50,96 8,62 8,20" fill="url(#crestGold)" stroke="#d97706" stroke-width="3" />
+          <polygon points="50,12 84,25 84,58 50,86 16,58 16,25" fill="#1e1b4b" stroke="#fef3c7" stroke-width="1.5" />
+          <circle cx="50" cy="50" r="22" fill="#d97706" />
+          <circle cx="50" cy="50" r="18" fill="#ffffff" />
+          <text x="50" y="56" font-family="'Segoe UI', Arial, sans-serif" font-size="14" font-weight="900" fill="#1e1b4b" text-anchor="middle">RT09</text>
+          <!-- Stars -->
+          <circle cx="28" cy="38" r="2" fill="#fef3c7"/>
+          <circle cx="72" cy="38" r="2" fill="#fef3c7"/>
+          <circle cx="50" cy="22" r="3" fill="#fef3c7"/>
+        </svg>
+      </div>
+
+      <!-- Teks Kop Naskah Dinas -->
+      <div class="kop-center">
+        <h4 class="kop-sub1">PEMERINTAH KABUPATEN {{ kota | upper }} - KECAMATAN {{ kecamatan | upper }}</h4>
+        <h5 class="kop-sub2">KELURAHAN {{ kelurahan | upper }}</h5>
+        <h1 class="kop-title">PAGUYUBAN WARGA {{ nama_rt }} / {{ nama_rw }}</h1>
+        <p class="kop-address">
+          Sekretariat: Perumahan De Naila Village Blok G, Kel. {{ kelurahan }}, Kec. {{ kecamatan }}, {{ kota }} {{ kode_pos }}<br>
+          Laman Portal: <strong>portalrt.id</strong> | Layanan WhatsApp Pengurus: {{ no_hp_rt }}
+        </p>
+      </div>
+
+      <!-- Logo Kanan (QRIS & Kas Trust Mark) -->
+      <div class="kop-logo" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <svg viewBox="0 0 70 70" width="60" height="60">
+          <circle cx="35" cy="35" r="32" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+          <path d="M 22,35 L 30,43 L 48,25" fill="none" stroke="#059669" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span style="font-size: 8px; font-weight:800; color:#065f46; letter-spacing:0.5px; margin-top:2px;">AKUNTABEL</span>
+      </div>
+    </div>
+
+    <!-- Garis Ganda Naskah Dinas -->
+    <div class="kop-divider"></div>
+
+    <!-- Judul & Info Dokumen -->
+    <div class="doc-header">
+      <h2 class="doc-title">BUKU LAPORAN KAS & KEUANGAN {{ nama_rt }} / {{ nama_rw }}</h2>
+      <div class="doc-period">{{ periode_judul }}</div>
+      <div class="doc-meta">
+        Dicetak Pada: <strong>{{ now_str }}</strong> | No. Register Dokumen: <strong>REG-KAS/{{ nama_rt.replace(' ', '') }}/{{ now_year }}/{{ filter_bulan or 'ALL' }}</strong>
+      </div>
+    </div>
+
+    <!-- Executive Financial KPI Cards -->
+    <div class="kpi-cards">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Penerimaan (Pemasukan)</div>
+        <div class="kpi-val val-pemasukan">+ Rp {{ "{:,.0f}".format(total_pemasukan).replace(',', '.') }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Beban (Pengeluaran)</div>
+        <div class="kpi-val val-pengeluaran">- Rp {{ "{:,.0f}".format(total_pengeluaran).replace(',', '.') }}</div>
+      </div>
+      <div class="kpi-card highlight">
+        <div class="kpi-label">Saldo Kas Periode Terpilih</div>
+        <div class="kpi-val val-saldo">Rp {{ "{:,.0f}".format(total_kas).replace(',', '.') }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Status Audit Internal</div>
+        <div class="kpi-val val-status">TERVERIFIKASI &amp; SEHAT</div>
+      </div>
+    </div>
+
+    <!-- Tabel Mutasi Kas Detail -->
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th style="width: 4%;">No</th>
+          <th style="width: 11%;">Tanggal</th>
+          <th style="width: 14%;">Kode Transaksi</th>
+          <th style="width: 11%;">Arus Kas</th>
+          <th style="width: 15%;">Kategori</th>
+          <th>Uraian / Deskripsi Lengkap Transaksi</th>
+          <th style="width: 17%;" class="col-right">Nominal (Rp)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trx in transaksi_list %}
+        <tr>
+          <td class="col-center" style="font-weight: 600; color: #64748b;">{{ loop.index }}</td>
+          <td class="col-center" style="font-family: monospace;">{{ trx.tanggal.strftime('%d/%m/%Y') if trx.tanggal else '-' }}</td>
+          <td class="col-center" style="font-family: monospace; font-weight: 700; color: #334155;">{{ trx.kode_transaksi }}</td>
+          <td class="col-center">
+            <span class="badge-jenis {% if trx.jenis == 'Pemasukan' %}badge-masuk{% else %}badge-keluar{% endif %}">
+              {{ trx.jenis }}
+            </span>
+          </td>
+          <td style="font-weight: 600; color: #334155;">{{ trx.kategori }}</td>
+          <td>
+            <strong style="color: #0f172a;">{{ trx.judul }}</strong>
+            {% if trx.keterangan %}
+            <div style="font-size: 10.5px; color: #64748b; margin-top: 1px;">{{ trx.keterangan }}</div>
+            {% endif %}
+          </td>
+          <td class="col-right {% if trx.jenis == 'Pemasukan' %}val-pemasukan{% else %}val-pengeluaran{% endif %}" style="font-family: 'Consolas', monospace; font-weight: 700; font-size: 12px;">
+            {{ '+' if trx.jenis == 'Pemasukan' else '-' }} Rp {{ "{:,.0f}".format(trx.jumlah).replace(',', '.') }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="col-center" style="padding: 24px; color: #64748b; font-style: italic;">
+            Tidak ada data transaksi kas yang tercatat untuk filter periode ini.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="table-total-row">
+          <td colspan="6" style="text-align: right; padding: 10px; font-size: 12px; text-transform: uppercase;">
+            Saldo Akhir Kas Buku (Total Pemasukan - Pengeluaran):
+          </td>
+          <td class="col-right" style="padding: 10px; font-family: 'Consolas', monospace; font-size: 13.5px; color: #1e1b4b;">
+            Rp {{ "{:,.0f}".format(total_kas).replace(',', '.') }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- Signatures & Verification Section -->
+    <div class="signatures-section">
+
+      <!-- Kotak Verifikasi Keabsahan Digital QR Code -->
+      <div class="audit-box">
+        <div class="audit-qr">
+          <svg viewBox="0 0 100 100" width="58" height="58">
+            <rect width="100" height="100" fill="#ffffff"/>
+            <!-- Corner Finders -->
+            <rect x="6" y="6" width="26" height="26" fill="#1e1b4b"/>
+            <rect x="10" y="10" width="18" height="18" fill="#ffffff"/>
+            <rect x="14" y="14" width="10" height="10" fill="#1e1b4b"/>
+
+            <rect x="68" y="6" width="26" height="26" fill="#1e1b4b"/>
+            <rect x="72" y="10" width="18" height="18" fill="#ffffff"/>
+            <rect x="76" y="14" width="10" height="10" fill="#1e1b4b"/>
+
+            <rect x="6" y="68" width="26" height="26" fill="#1e1b4b"/>
+            <rect x="10" y="72" width="18" height="18" fill="#ffffff"/>
+            <rect x="14" y="76" width="10" height="10" fill="#1e1b4b"/>
+
+            <!-- High density matrix elements -->
+            <rect x="38" y="8" width="6" height="6" fill="#1e1b4b"/>
+            <rect x="48" y="12" width="12" height="6" fill="#1e1b4b"/>
+            <rect x="36" y="24" width="8" height="8" fill="#4338ca"/>
+            <rect x="48" y="32" width="14" height="6" fill="#1e1b4b"/>
+            <rect x="10" y="40" width="8" height="8" fill="#1e1b4b"/>
+            <rect x="24" y="44" width="6" height="14" fill="#1e1b4b"/>
+            <rect x="42" y="44" width="16" height="12" fill="#d97706"/>
+            <rect x="68" y="38" width="8" height="6" fill="#1e1b4b"/>
+            <rect x="80" y="48" width="12" height="8" fill="#1e1b4b"/>
+            <rect x="40" y="64" width="8" height="14" fill="#1e1b4b"/>
+            <rect x="52" y="70" width="10" height="8" fill="#1e1b4b"/>
+            <rect x="70" y="66" width="14" height="10" fill="#1e1b4b"/>
+            <rect x="42" y="84" width="18" height="6" fill="#1e1b4b"/>
+            <rect x="66" y="86" width="16" height="6" fill="#1e1b4b"/>
+          </svg>
+        </div>
+        <div class="audit-text">
+          <strong>AUDIT DIGITAL PORTAL {{ nama_rt }}</strong>
+          Buku laporan ini dijamin keabsahan &amp; integritas mutasinya oleh Sistem Akuntansi Paguyuban {{ nama_rt }}.<br>
+          <span style="font-family: monospace; font-size: 8.5px; color: #4338ca;">SHA: {{ now_str.replace(':', '').replace('-', '') }}-{{ total_kas|int }}</span><br>
+          <span class="audit-badge">&#10003; AUDIT TERVALIDASI SAH</span>
+        </div>
+      </div>
+
+      <!-- Tanda Tangan Ganda Pejabat RT -->
+      <div class="sign-group">
+
+        <!-- Ketua RT -->
+        <div class="sign-box">
+          <p>Mengetahui,</p>
+          <p><strong>Ketua {{ nama_rt }} / {{ nama_rw }}</strong></p>
+          
+          <div class="sign-area">
+            <!-- Otentik Stempel Basah Paguyuban RT (Ungu Tinta Asli) -->
+            <svg viewBox="0 0 160 160" width="115" height="115" class="stempel-rt">
+              <defs>
+                <path id="stampTopPath" d="M 22,80 A 58,58 0 0,1 138,80" fill="none" />
+                <path id="stampBottomPath" d="M 138,80 A 58,58 0 0,1 22,80" fill="none" />
+              </defs>
+              <circle cx="80" cy="80" r="74" fill="none" stroke="#253580" stroke-width="2.5" />
+              <circle cx="80" cy="80" r="70" fill="none" stroke="#253580" stroke-width="1.2" />
+              <circle cx="80" cy="80" r="46" fill="none" stroke="#253580" stroke-width="1.5" />
+              
+              <text font-family="'Arial Black', Arial, sans-serif" font-size="9" font-weight="900" fill="#253580" letter-spacing="1.5">
+                <textPath href="#stampTopPath" startOffset="50%" text-anchor="middle">
+                  PAGUYUBAN WARGA RT 09
+                </textPath>
+              </text>
+              
+              <text font-family="'Arial Black', Arial, sans-serif" font-size="8" font-weight="900" fill="#253580" letter-spacing="1.5">
+                <textPath href="#stampBottomPath" startOffset="50%" text-anchor="middle">
+                  * KEL. MOJOSARIREJO *
+                </textPath>
+              </text>
+              
+              <text x="80" y="69" font-family="'Arial Black', Arial, sans-serif" font-size="8" font-weight="bold" fill="#253580" text-anchor="middle" letter-spacing="0.5">KEC. DRIYOREJO</text>
+              <line x1="50" y1="73" x2="110" y2="73" stroke="#253580" stroke-width="1" />
+              <text x="80" y="85" font-family="'Arial Black', Arial, sans-serif" font-size="11" font-weight="900" fill="#253580" text-anchor="middle" letter-spacing="1">PENGURUS</text>
+              <line x1="50" y1="89" x2="110" y2="89" stroke="#253580" stroke-width="1" />
+              <text x="80" y="99" font-family="'Arial Black', Arial, sans-serif" font-size="8" font-weight="bold" fill="#253580" text-anchor="middle" letter-spacing="0.5">RW 14 GRESIK</text>
+            </svg>
+
+            <!-- Handwritten Vector Signature of H. Bambang Sutrisno -->
+            <svg viewBox="0 0 200 90" width="140" height="60" class="vector-signature">
+              <path d="M 20,65 C 28,30 35,15 48,22 C 58,28 35,75 52,68 C 65,62 80,35 90,42 C 100,50 92,68 110,55 C 125,44 140,48 155,42 C 165,38 178,45 185,38 M 30,52 Q 90,48 175,45 M 65,30 L 65,72 M 130,35 L 140,68" 
+                    fill="none" stroke="#0f172a" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+
+          <p class="sign-name">( {{ nama_ketua | upper }} )</p>
+          <p class="sign-role">Ketua {{ nama_rt }} Periode Aktif</p>
+        </div>
+
+        <!-- Bendahara -->
+        <div class="sign-box">
+          <p>{{ kota }}, {{ today_formal }}</p>
+          <p><strong>Bendahara Paguyuban</strong></p>
+          
+          <div class="sign-area">
+            <!-- Digital Stamp Bendahara Keuangan -->
+            <div style="position: absolute; right: 10px; top: 10px; border: 1.5px dashed #047857; color: #047857; padding: 2px 8px; border-radius: 4px; font-size: 8px; font-weight: 800; transform: rotate(-5deg); z-index: 1;">
+              KAS TERVERIFIKASI
+            </div>
+
+            <!-- Handwritten Vector Signature of Ahmad Fauzi, S.E. -->
+            <svg viewBox="0 0 200 90" width="140" height="60" class="vector-signature" style="left: 30px;">
+              <path d="M 25,60 C 35,25 45,18 55,30 C 65,42 40,78 60,65 C 75,55 90,40 105,48 C 115,55 110,68 128,58 C 145,48 160,52 175,46 M 40,48 Q 110,42 180,40 M 80,32 Q 95,68 115,62" 
+                    fill="none" stroke="#0f172a" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+
+          <p class="sign-name">( AHMAD FAUZI, S.E. )</p>
+          <p class="sign-role">Pengurus Keuangan &amp; Kas RT</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+
+</html>

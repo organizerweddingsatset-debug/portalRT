@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{% if rumah %}Edit Rumah {{ rumah.no_rumah }}{% else %}Tambah Unit Rumah Baru{% endif %} - Portal RT 09{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <!-- Breadcrumbs -->
+  <div class="flex items-center space-x-2 text-xs text-slate-400">
+    <a href="{{ url_for('rumah_index') }}" class="hover:text-indigo-400 transition-colors">
+      <i class="fa-solid fa-arrow-left mr-1"></i> Data Rumah
+    </a>
+    <span>/</span>
+    <span class="text-white font-medium">{% if rumah %}Edit Properti {{ rumah.no_rumah }}{% else %}Tambah Rumah Baru{% endif %}</span>
+  </div>
+
+  <!-- Form Card -->
+  <div class="card-glow rounded-2xl p-6 bg-[#141b31] border border-[#212c4e]">
+    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-[#212c4e]">
+      <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-bold text-lg">
+        <i class="fa-solid fa-house-chimney"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-white tracking-tight">
+          {% if rumah %}Edit Data Unit Rumah {{ rumah.no_rumah }}{% else %}Form Pendaftaran Unit Rumah Baru{% endif %}
+        </h1>
+        <p class="text-xs text-slate-400">Pastikan nomor unit dan status kepemilikan terdata akurat untuk pembukuan RT.</p>
+      </div>
+    </div>
+
+    <form method="POST" action="{% if rumah %}{{ url_for('rumah_edit', id=rumah.id) }}{% else %}{{ url_for('rumah_tambah') }}{% endif %}" class="space-y-4">
+      
+      <!-- Nomor Rumah, Blok, Nomor -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="sm:col-span-1">
+          <label for="blok" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Blok <span class="text-rose-400">*</span>
+          </label>
+          <input type="text" id="blok" name="blok" required placeholder="Contoh: G" value="{{ rumah.blok if rumah else '' }}"
+                 class="dark-input text-xs py-2">
+        </div>
+
+        <div class="sm:col-span-1">
+          <label for="nomor" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Nomor <span class="text-rose-400">*</span>
+          </label>
+          <input type="text" id="nomor" name="nomor" required placeholder="Contoh: 65" value="{{ rumah.nomor if rumah else '' }}"
+                 class="dark-input text-xs py-2">
+        </div>
+
+        <div class="sm:col-span-1">
+          <label for="no_rumah" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Format No. Rumah <span class="text-rose-400">*</span>
+          </label>
+          <input type="text" id="no_rumah" name="no_rumah" required placeholder="Contoh: G/65" value="{{ rumah.no_rumah if rumah else '' }}"
+                 class="dark-input text-xs py-2">
+        </div>
+      </div>
+
+      <!-- Alamat Lengkap -->
+      <div>
+        <label for="alamat" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+          Alamat Lengkap Unit Rumah
+        </label>
+        <textarea id="alamat" name="alamat" rows="2" placeholder="Contoh: Jl. Melati Blok G No. 65, RT 09 / RW 14"
+                  class="dark-input text-xs py-2">{{ rumah.alamat if rumah else '' }}</textarea>
+      </div>
+
+      <!-- Pemilik & Status Huni -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="pemilik_id" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Pemilik Properti (Sertifikat / Tetap)
+          </label>
+          <select id="pemilik_id" name="pemilik_id" class="dark-input text-xs py-2">
+            <option value="">-- Pilih Pemilik Properti --</option>
+            {% for w in warga_list %}
+            <option value="{{ w.id }}" {% if rumah and rumah.pemilik_id == w.id %}selected{% endif %}>
+              {{ w.nama }} (NIK: {{ w.nik }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="status_huni" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Status Huni
+          </label>
+          <select id="status_huni" name="status_huni" class="dark-input text-xs py-2">
+            <option value="Dihuni Pemilik" {% if rumah and rumah.status_huni == 'Dihuni Pemilik' %}selected{% endif %}>Dihuni Pemilik</option>
+            <option value="Dikontrakkan" {% if rumah and rumah.status_huni == 'Dikontrakkan' %}selected{% endif %}>Dikontrakkan</option>
+            <option value="Kosong" {% if rumah and rumah.status_huni == 'Kosong' %}selected{% endif %}>Kosong</option>
+          </select>
+        </div>
+      </div>
+
+      {% if not rumah %}
+      <!-- Initial Resident (for new house creation only) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="penghuni_aktif_id" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Penghuni Awal
+          </label>
+          <select id="penghuni_aktif_id" name="penghuni_aktif_id" class="dark-input text-xs py-2">
+            <option value="">-- Sama dengan Pemilik / Kosong --</option>
+            {% for w in warga_list %}
+            <option value="{{ w.id }}">{{ w.nama }} (NIK: {{ w.nik }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="tipe_penghuni" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Tipe Penghuni Awal
+          </label>
+          <select id="tipe_penghuni" name="tipe_penghuni" class="dark-input text-xs py-2">
+            <option value="Pemilik">Pemilik</option>
+            <option value="Pengontrak">Pengontrak</option>
+          </select>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Catatan Properti -->
+      <div>
+        <label for="catatan" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+          Catatan Tambahan
+        </label>
+        <textarea id="catatan" name="catatan" rows="2" placeholder="Catatan mengenai unit rumah atau perjanjian..."
+                  class="dark-input text-xs py-2">{{ rumah.catatan if rumah else '' }}</textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pt-4 border-t border-[#1d2745] flex items-center justify-end space-x-3">
+        <a href="{{ url_for('rumah_index') }}" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors">
+          Batal
+        </a>
+        <button type="submit" 
+                class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all">
+          {% if rumah %}Simpan Perubahan{% else %}Daftarkan Unit Rumah{% endif %}
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}

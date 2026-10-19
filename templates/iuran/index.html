@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Iuran Warga - Portal RT 09{% endblock %}
+{% block page_title %}{% if current_user and current_user.role == 'warga' %}Iuran Saya{% elif view_mode == 'saya' %}Iuran Pribadi Pengurus ({{ current_user.warga.nama if current_user.warga else current_user.username }}){% else %}Manajemen Iuran Warga RT 09{% endif %}{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/qrcode.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1">Total Tagihan</div>
+      <div class="text-2xl font-black text-white font-mono">{{ total_tagihan }}</div>
+      <div class="text-[11px] text-slate-400 mt-1">Catatan tagihan periode</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-square-check text-emerald-400"></i>
+        <span>Lunas</span>
+      </div>
+      <div class="text-2xl font-black text-emerald-400 font-mono">{{ lunas_count }}</div>
+      <div class="text-[11px] text-emerald-400/80 mt-1">Rp {{ "{:,.0f}".format(lunas_total).replace(',', '.') }} terkumpul</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-hourglass-half text-amber-400"></i>
+        <span>Belum Lunas</span>
+      </div>
+      <div class="text-2xl font-black text-amber-400 font-mono">{{ belum_count }}</div>
+      <div class="text-[11px] text-amber-400/80 mt-1">Rp {{ "{:,.0f}".format(belum_total).replace(',', '.') }} tertunggak</div>
+    </div>
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="text-xs text-slate-400 font-semibold mb-1 flex items-center space-x-1">
+        <i class="fa-solid fa-circle-dot text-sky-400"></i>
+        <span>Menunggu Konfirmasi</span>
+      </div>
+      <div class="text-2xl font-black text-sky-400 font-mono">{{ menunggu_count }}</div>
+      <div class="text-[11px] text-sky-400/80 mt-1">Perlu verifikasi bukti</div>
+    </div>
+  </div>
+
+  <!-- QRIS Quick Pay Banner for Residents -->
+  <div class="card-glow rounded-xl p-5 border border-indigo-500/30 bg-gradient-to-r from-[#141a35] to-[#1a1c3d] flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center space-x-4">
+      <div class="p-3 bg-indigo-600/20 border border-indigo-500/40 rounded-xl text-indigo-400 text-2xl">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white">Pembayaran Mudah dengan QRIS & Transfer Bank</h4>
+        <p class="text-xs text-slate-300 mt-0.5">Iuran bulanan {{ global_rt }} sebesar Rp {{ "{:,.0f}".format(get_setting('iuran_bulanan', 15000)|float).replace(',', '.') }} / bulan. Scan QRIS atau transfer ke Rekening {{ get_setting('bank_nama', 'Bank Central Asia (BCA)') }}: <strong class="text-indigo-300 font-mono">{{ get_setting('bank_rekening', '8830-1928-31') }}</strong> a.n {{ get_setting('bank_atas_nama', 'PAGUYUBAN WARGA RT 09') }}.</p>
+      </div>
+    </div>
+    <button onclick="openQrisModal()" 
+            class="shrink-0 px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2">
+      <i class="fa-solid fa-wallet"></i>
+      <span>Buka QRIS & Cara Bayar</span>
+    </button>
+  </div>
+
+  <!-- Main Iuran Table -->
+  <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+    
+    {% if current_user and current_user.is_admin() %}
+    <!-- Admin / Pengurus Mode Switcher Tabs -->
+    <div class="px-5 pt-4 pb-0 border-b border-[#1f2a4a] bg-[#10162a] flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-2">
+        <a href="{{ url_for('iuran_index', view='semua') }}" 
+           class="px-4 py-2.5 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center space-x-2 {% if view_mode == 'semua' %}border-indigo-500 text-indigo-400 bg-[#141b31]{% else %}border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#141b31]/50{% endif %}">
+          <i class="fa-solid fa-building-columns"></i>
+          <span>Seluruh Warga RT 09</span>
+          <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] {% if view_mode == 'semua' %}bg-indigo-500/20 text-indigo-300{% else %}bg-slate-800 text-slate-400{% endif %}">Kelola Kas RT</span>
+        </a>
+        {% if current_user.is_warga() %}
+        <a href="{{ url_for('iuran_index', view='saya') }}" 
+           class="px-4 py-2.5 text-xs font-bold rounded-t-lg transition-all border-b-2 flex items-center space-x-2 {% if view_mode == 'saya' %}border-indigo-500 text-indigo-400 bg-[#141b31]{% else %}border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#141b31]/50{% endif %}">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>Iuran Pribadi Saya</span>
+          {% if current_user.warga %}
+          <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] {% if view_mode == 'saya' %}bg-indigo-500/20 text-indigo-300{% else %}bg-slate-800 text-slate-400{% endif %}">{{ current_user.warga.no_rumah }}</span>
+          {% endif %}
+        </a>
+        {% else %}
+        <span class="px-3 py-2 text-[11px] text-purple-400 font-semibold bg-purple-950/40 rounded-t-lg border-b-2 border-purple-800 flex items-center space-x-1.5">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Superadmin: Bukan Warga RT</span>
+        </span>
+        {% endif %}
+      </div>
+      
+      <div class="text-xs pb-2 text-slate-400 flex items-center space-x-2">
+        <i class="fa-solid fa-circle-user text-indigo-400"></i>
+        <span>Login: <strong class="text-white">{{ current_user.nama }}</strong> ({{ current_user.role_display }} - {{ current_user.user_type_display }})</span>
+      </div>
+    </div>
+
+    {% if view_mode == 'saya' %}
+    <div class="px-5 py-3 bg-indigo-950/40 border-b border-indigo-900/40 text-xs text-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-circle-info text-indigo-400 shrink-0"></i>
+        <span>Menampilkan catatan tagihan & pembayaran iuran pribadi keluarga Anda (<strong>{{ current_user.warga.nama if current_user.warga else current_user.username }}</strong>, Rumah {{ current_user.warga.no_rumah if current_user.warga else '-' }}).</span>
+      </div>
+      <a href="{{ url_for('iuran_index', view='semua') }}" class="text-xs font-bold text-indigo-400 hover:text-indigo-300 underline shrink-0">
+        Beralih ke Seluruh Warga RT &rarr;
+      </a>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Filter Toolbar -->
+    <div class="p-5 border-b border-[#1f2a4a] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      
+      <form method="GET" action="{{ url_for('iuran_index') }}" class="flex flex-wrap items-center gap-2.5 flex-1">
+        <input type="hidden" name="view" value="{{ view_mode }}">
+        {% if current_user and current_user.is_admin() and view_mode != 'saya' %}
+        <div class="relative min-w-[200px] flex-1">
+          <input type="text" name="q" value="{{ request.args.get('q', '') }}" 
+                 placeholder="Cari nama warga / NIK..." 
+                 class="dark-input pl-8 py-2 text-xs">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+          </span>
+        </div>
+        {% endif %}
+
+        <select name="bulan" class="dark-input py-2 text-xs w-auto">
+          <option value="">Semua Bulan</option>
+          {% for b in range(1, 13) %}
+          <option value="{{ b }}" {% if request.args.get('bulan') == b|string %}selected{% endif %}>Bulan {{ b }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="tahun" class="dark-input py-2 text-xs w-auto">
+          <option value="2026" selected>2026</option>
+          <option value="2025" {% if request.args.get('tahun') == '2025' %}selected{% endif %}>2025</option>
+        </select>
+
+        <select name="status" class="dark-input py-2 text-xs w-auto">
+          <option value="">Semua Status</option>
+          <option value="Lunas" {% if request.args.get('status') == 'Lunas' %}selected{% endif %}>Lunas</option>
+          <option value="Belum Lunas" {% if request.args.get('status') == 'Belum Lunas' %}selected{% endif %}>Belum Lunas</option>
+          <option value="Menunggu Konfirmasi" {% if request.args.get('status') == 'Menunggu Konfirmasi' %}selected{% endif %}>Menunggu Konfirmasi</option>
+        </select>
+
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition-colors">
+          Filter
+        </button>
+        {% if request.args.get('status') or request.args.get('bulan') or request.args.get('q') %}
+        <a href="{{ url_for('iuran_index', view=view_mode) }}" class="text-xs text-slate-400 hover:text-white px-2 py-2">Reset</a>
+        {% endif %}
+      </form>
+
+      {% if current_user and current_user.is_admin() %}
+      <div class="flex items-center space-x-2 shrink-0">
+        <form method="POST" action="{{ url_for('iuran_generate_periode') }}" onsubmit="return confirm('Generate tagihan baru untuk semua warga aktif?');">
+          <input type="hidden" name="bulan" value="5">
+          <input type="hidden" name="tahun" value="2026">
+          <button type="submit" class="text-xs bg-[#19223e] hover:bg-[#232f53] text-indigo-300 border border-[#2b3964] font-medium px-3 py-2 rounded-lg transition-colors flex items-center space-x-1">
+            <i class="fa-solid fa-calendar-plus"></i>
+            <span>+ Tagihan Bulan Baru</span>
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-300">
+        <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px] border-b border-[#1f2a4a]">
+          <tr>
+            <th class="py-3 px-4">Warga / NIK</th>
+            <th class="py-3 px-4">No. Rumah</th>
+            <th class="py-3 px-4">Periode</th>
+            <th class="py-3 px-4">Nominal</th>
+            <th class="py-3 px-4">Metode Bayar</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4 text-center">Aksi / Verifikasi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#1b2440]">
+          {% for iur in iuran_list %}
+          <tr class="hover:bg-[#18213e]/60 transition-colors">
+            <td class="py-3 px-4">
+              <div class="font-bold text-white">{{ iur.warga.nama }}</div>
+              <div class="text-[11px] text-slate-400 font-mono">NIK: {{ iur.warga.nik }}</div>
+            </td>
+            <td class="py-3 px-4 font-semibold text-slate-300">
+              {{ iur.warga.no_rumah or '-' }}
+            </td>
+            <td class="py-3 px-4 font-mono font-medium text-slate-200">
+              Bulan {{ iur.periode_bulan }} / {{ iur.periode_tahun }}
+            </td>
+            <td class="py-3 px-4 font-bold text-white">
+              Rp {{ "{:,.0f}".format(iur.jumlah).replace(',', '.') }}
+            </td>
+            <td class="py-3 px-4">
+              <span class="text-slate-300">{{ iur.metode_bayar or '-' }}</span>
+              {% if iur.tanggal_bayar %}
+              <div class="text-[10px] text-slate-500">{{ iur.tanggal_bayar.strftime('%d/%m/%Y %H:%M') }}</div>
+              {% endif %}
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2.5 py-1 rounded text-[11px] font-bold 
+                {% if iur.status == 'Lunas' %}
+                  bg-emerald-950/80 text-emerald-300 border border-emerald-800
+                {% elif iur.status == 'Menunggu Konfirmasi' %}
+                  bg-sky-950/80 text-sky-300 border border-sky-800 animate-pulse
+                {% else %}
+                  bg-amber-950/80 text-amber-300 border border-amber-800
+                {% endif %}">
+                {{ iur.status }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="inline-flex items-center space-x-1.5">
+                
+                <!-- If Belum Lunas or Warga: Bayar Form/Upload Bukti -->
+                {% if iur.status != 'Lunas' %}
+                <button type="button"
+                        data-id="{{ iur.id }}"
+                        data-nama="{{ iur.warga.nama }}"
+                        data-periode="Bulan {{ iur.periode_bulan }}/{{ iur.periode_tahun }}"
+                        data-nominal="{{ '{:,.0f}'.format(iur.jumlah).replace(',', '.') }}"
+                        onclick="handleOpenBayar(this)"
+                        class="px-2.5 py-1 rounded bg-indigo-600/80 hover:bg-indigo-500 text-white font-semibold text-[11px] transition-colors"
+                        title="Upload Bukti / Catat Bayar">
+                  <i class="fa-solid fa-receipt mr-1"></i> Bayar
+                </button>
+
+                {% if get_setting('mayar_is_active') == '1' %}
+                <a href="{{ url_for('iuran_mayar_create', id=iur.id) }}"
+                   class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold text-[11px] transition-colors inline-flex items-center"
+                   title="Bayar Otomatis via QRIS Mayar">
+                  <i class="fa-solid fa-bolt mr-1 text-[10px] text-amber-400"></i> Mayar QRIS
+                </a>
+                {% endif %}
+                {% endif %}
+
+                <!-- Admin Action: Verifikasi Cepat Lunas -->
+                {% if current_user and current_user.is_admin() and iur.status != 'Lunas' %}
+                <form method="POST" action="{{ url_for('iuran_verifikasi', id=iur.id) }}" class="inline" onsubmit="return confirm('Konfirmasi LUNAS untuk iuran warga {{ iur.warga.nama }}?');">
+                  <input type="hidden" name="status" value="Lunas">
+                  <button type="submit" class="px-2.5 py-1 rounded bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-[11px] transition-colors"
+                          title="Tandai Lunas">
+                    <i class="fa-solid fa-check mr-1"></i> Set Lunas
+                  </button>
+                </form>
+                {% endif %}
+
+                {% if iur.status == 'Lunas' %}
+                <a href="{{ url_for('iuran_kuitansi', id=iur.id) }}" target="_blank"
+                   class="px-2.5 py-1 rounded bg-indigo-900/50 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-700/50 font-semibold text-[11px] transition-colors inline-flex items-center"
+                   title="Lihat / Cetak Kuitansi Resmi">
+                  <i class="fa-solid fa-receipt mr-1 text-xs"></i> Kuitansi
+                </a>
+                {% endif %}
+
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="py-8 text-center text-slate-400 italic">
+              Tidak ada data iuran yang sesuai filter.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-4 border-t border-[#1f2a4a] text-xs text-slate-400 flex items-center justify-between">
+      <span>Menampilkan <strong>{{ iuran_list|length }}</strong> data transaksi iuran</span>
+      <span>Portal RT 09</span>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- QRIS Modal -->
+<div id="qrisModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="card-glow rounded-2xl max-w-sm w-full p-6 bg-[#141b31] border border-[#263560] relative">
+    <input type="hidden" id="modalQrisPayload" value="{{ get_setting('qris_payload', '') }}">
+    <button onclick="closeQrisModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+    <div class="text-center mb-4">
+      <h3 class="text-base font-bold text-white">{{ get_setting('qris_merchant_name', 'QRIS Kas Paguyuban RT 09') }}</h3>
+      <p class="text-xs text-slate-400">Scan QRIS menggunakan mobile banking atau dompet digital</p>
+    </div>
+    
+    <div class="bg-white p-3 rounded-xl mx-auto w-fit mb-4 shadow-lg border border-slate-200 text-center">
+      <div id="qrisModalBox" class="w-56 h-56 flex items-center justify-center overflow-hidden mx-auto">
+        <img id="qrisModalFallback" src="{{ url_for('static', filename='img/qris_demo.svg') }}" alt="QRIS RT 09" class="w-56 h-auto">
+      </div>
+      <div class="text-[10px] font-bold text-slate-600 tracking-wider mt-2 uppercase font-mono">NMID: {{ get_setting('qris_nmid', 'ID1020030040506') }}</div>
+      <div class="text-[11px] font-bold text-slate-800 uppercase">{{ get_setting('bank_atas_nama', 'PAGUYUBAN WARGA RT 09') }}</div>
+    </div>
+
+    <div class="bg-[#0e1428] p-3 rounded-xl border border-[#212c4e] text-xs space-y-2 text-slate-300 mb-4">
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">Bank Tujuan:</span>
+        <span class="font-bold text-white">{{ get_setting('bank_nama', 'Bank Central Asia (BCA)') }}</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">No. Rekening:</span>
+        <div class="flex items-center space-x-1.5">
+          <span id="txtRekening" class="font-mono font-bold text-indigo-400">{{ get_setting('bank_rekening', '8830-1928-31') }}</span>
+          <button type="button" onclick="copyRekeningText()" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-slate-800 text-[10px] border border-slate-700" title="Salin No. Rekening">
+            <i class="fa-regular fa-copy" id="rekeningCopyIcon"></i>
+          </button>
+        </div>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">Atas Nama:</span>
+        <span class="font-medium text-white">{{ get_setting('bank_atas_nama', 'PAGUYUBAN WARGA RT 09') }}</span>
+      </div>
+    </div>
+
+    {% if get_setting('mayar_is_active') == '1' %}
+    <div class="mb-3 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 flex items-center space-x-2">
+      <i class="fa-solid fa-bolt text-amber-400"></i>
+      <span>Didukung Webhook Otomatis Mayar.id: Pembayaran via QRIS terverifikasi instan secara realtime.</span>
+    </div>
+    {% endif %}
+
+    {% if get_setting('qris_payload') %}
+    <div class="mb-3">
+      <button type="button" onclick="copyQrisModalPayload()" id="btnCopyQrisPayload"
+        class="w-full py-2 bg-[#1b2545] hover:bg-indigo-600/90 text-indigo-200 hover:text-white font-semibold text-xs rounded-lg transition-colors border border-indigo-500/30 flex items-center justify-center space-x-1.5 shadow-sm">
+        <i class="fa-regular fa-copy" id="payloadModalCopyIcon"></i>
+        <span id="payloadModalCopyText">Salin String QRIS (EMVCo Payload)</span>
+      </button>
+    </div>
+    {% endif %}
+
+    <button onclick="closeQrisModal()" 
+            class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition-colors">
+      Tutup
+    </button>
+  </div>
+</div>
+
+<!-- Modal Bayar Iuran -->
+<div id="bayarModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="card-glow rounded-2xl max-w-md w-full p-6 bg-[#141b31] border border-[#263560] relative">
+    <button onclick="document.getElementById('bayarModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+
+    <h3 class="text-base font-bold text-white mb-1">Form Pembayaran Iuran</h3>
+    <p class="text-xs text-slate-400 mb-4" id="modalSubTitle">Upload bukti pembayaran atau catat pembayaran kas</p>
+
+    {% if get_setting('mayar_is_active') == '1' %}
+    <div class="mb-4 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-indigo-500/10 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm">
+      <div class="space-y-0.5">
+        <div class="text-xs font-bold text-white flex items-center space-x-1.5">
+          <i class="fa-solid fa-bolt text-amber-400"></i>
+          <span>Bayar Instan Tanpa Upload Struk</span>
+        </div>
+        <p class="text-[10.5px] text-slate-300">Gunakan QRIS Dinamis Mayar.id, status langsung Lunas otomatis via Webhook.</p>
+      </div>
+      <a id="btnBayarMayarModal" href="#" 
+         class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-sm inline-flex items-center space-x-1 shrink-0">
+        <span>Buka QRIS</span>
+        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+      </a>
+    </div>
+    {% endif %}
+
+    <form id="formBayar" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Nama Warga</label>
+        <input type="text" id="modalWargaNama" readonly class="dark-input bg-[#0d1224] text-slate-400 font-bold">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Periode</label>
+          <input type="text" id="modalPeriode" readonly class="dark-input bg-[#0d1224] text-slate-400">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nominal</label>
+          <input type="text" id="modalNominal" readonly class="dark-input bg-[#0d1224] font-bold text-indigo-400">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Metode Pembayaran</label>
+        <select name="metode_bayar" required class="dark-input">
+          <option value="QRIS">QRIS (Scan Barcode)</option>
+          <option value="Transfer Bank">Transfer Bank (BCA 8830192831)</option>
+          <option value="Tunai / Cash">Tunai / Cash (Langsung ke Bendahara)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Unggah Foto Bukti Transfer / Struk</label>
+        <input type="file" name="bukti_transfer" accept="image/*" class="dark-input py-1.5 text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-indigo-600 file:text-white">
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Catatan Tambahan (Opsional)</label>
+        <textarea name="catatan" rows="2" placeholder="Catatan atau nomor referensi transfer..." class="dark-input"></textarea>
+      </div>
+
+      <div class="pt-3 flex items-center justify-end space-x-2">
+        <button type="button" onclick="document.getElementById('bayarModal').classList.add('hidden')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e]">
+          Batal
+        </button>
+        <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
+          Kirim Pembayaran
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function handleOpenBayar(btn) {
+    if (!btn) return;
+    const id = btn.getAttribute('data-id') || '';
+    const nama = btn.getAttribute('data-nama') || '';
+    const periode = btn.getAttribute('data-periode') || '';
+    const nominal = btn.getAttribute('data-nominal') || '';
+    openBayarModal(id, nama, periode, nominal);
+  }
+
+  function openBayarModal(id, nama, periode, nominal) {
+    document.getElementById('formBayar').action = '/iuran/bayar/' + id;
+    document.getElementById('modalWargaNama').value = nama;
+    document.getElementById('modalPeriode').value = periode;
+    document.getElementById('modalNominal').value = 'Rp ' + nominal;
+    const btnMayar = document.getElementById('btnBayarMayarModal');
+    if (btnMayar) {
+      btnMayar.href = '/iuran/mayar/create/' + id;
+    }
+    document.getElementById('bayarModal').classList.remove('hidden');
+  }
+
+  function getQrisPayloadString() {
+    const el = document.getElementById('modalQrisPayload');
+    return el ? (el.value || '').trim() : '';
+  }
+
+  let qrisModalQrcode = null;
+
+  function openQrisModal() {
+    const modal = document.getElementById('qrisModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const payload = getQrisPayloadString();
+    if (payload && typeof QRCode !== 'undefined') {
+      const container = document.getElementById('qrisModalBox');
+      if (container && !qrisModalQrcode) {
+        container.innerHTML = '';
+        try {
+          qrisModalQrcode = new QRCode(container, {
+            text: payload,
+            width: 224,
+            height: 224,
+            colorDark: '#0f172a',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (e) {
+          console.warn('QR code modal render failed:', e);
+        }
+      }
+    }
+  }
+
+  function closeQrisModal() {
+    const modal = document.getElementById('qrisModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function copyRekeningText() {
+    const rek = document.getElementById('txtRekening');
+    if (!rek) return;
+    const val = rek.textContent.trim().replace(/-/g, '');
+    navigator.clipboard.writeText(val).then(() => {
+      const icon = document.getElementById('rekeningCopyIcon');
+      if (icon) {
+        icon.className = 'fa-solid fa-check text-emerald-400';
+        setTimeout(() => { icon.className = 'fa-regular fa-copy'; }, 2000);
+      }
+    });
+  }
+
+  function copyQrisModalPayload() {
+    const payload = getQrisPayloadString();
+    if (!payload) return;
+    navigator.clipboard.writeText(payload).then(() => {
+      const icon = document.getElementById('payloadModalCopyIcon');
+      const text = document.getElementById('payloadModalCopyText');
+      if (icon && text) {
+        icon.className = 'fa-solid fa-check text-emerald-400';
+        text.textContent = 'String QRIS Berhasil Disalin!';
+        setTimeout(() => {
+          icon.className = 'fa-regular fa-copy';
+          text.textContent = 'Salin String QRIS (EMVCo Payload)';
+        }, 2000);
+      }
+    });
+  }
+</script>
+{% endblock %}

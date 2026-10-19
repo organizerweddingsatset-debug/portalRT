@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Detail Laporan: {{ laporan.judul }} - Portal RT 09{% endblock %}
+{% block page_title %}Detail Pengaduan Warga{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('pelaporan_index') }}" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1.5">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Kembali ke Daftar Laporan</span>
+    </a>
+  </div>
+
+  <div class="card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31] space-y-6">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#1f2a4a] gap-2">
+      <div>
+        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-[#19223e] border border-[#2b3964] text-indigo-300">
+          Kategori: {{ laporan.kategori }}
+        </span>
+        <h3 class="text-lg font-bold text-white mt-1">{{ laporan.judul }}</h3>
+      </div>
+      <div>
+        <span class="px-3 py-1 rounded text-xs font-bold 
+          {% if laporan.status == 'Selesai' %}
+            bg-emerald-950/80 text-emerald-300 border border-emerald-800
+          {% elif laporan.status == 'Diproses' %}
+            bg-sky-950/80 text-sky-300 border border-sky-800
+          {% elif laporan.status == 'Ditolak' %}
+            bg-rose-950/80 text-rose-300 border border-rose-800
+          {% else %}
+            bg-amber-950/80 text-amber-300 border border-amber-800
+          {% endif %}">
+          Status: {{ laporan.status }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Meta Details -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-[#0e1428] p-4 rounded-lg border border-[#212c4e]">
+      <div>
+        <span class="text-slate-400 block mb-0.5">Nama Pelapor:</span>
+        <strong class="text-white">{{ laporan.nama_pelapor }}</strong>
+      </div>
+      <div>
+        <span class="text-slate-400 block mb-0.5">Titik Lokasi:</span>
+        <strong class="text-white">{{ laporan.lokasi or '-' }}</strong>
+      </div>
+      <div>
+        <span class="text-slate-400 block mb-0.5">Waktu Laporan:</span>
+        <span class="text-slate-300">{{ laporan.created_at.strftime('%d-%m-%Y %H:%M') }}</span>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Uraian Masalah</label>
+      <div class="p-4 rounded-lg bg-[#0e1428] border border-[#212c4e] text-xs text-slate-200 leading-relaxed whitespace-pre-line">
+        {{ laporan.deskripsi }}
+      </div>
+    </div>
+
+    <!-- Photo if uploaded -->
+    {% if laporan.foto %}
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Lampiran Foto Bukti</label>
+      <div class="p-2 rounded-lg bg-[#0e1428] border border-[#212c4e] inline-block">
+        <img src="{{ url_for('static', filename='uploads/' + laporan.foto) }}" alt="Foto Laporan" class="max-h-60 rounded border border-[#212c4e]">
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Existing Response -->
+    {% if laporan.tanggapan_petugas or laporan.tindak_lanjut %}
+    <div class="p-4 rounded-lg bg-[#0e1428] border border-emerald-800/40 space-y-2 text-xs">
+      <h4 class="font-bold text-emerald-400 uppercase text-[11px] flex items-center space-x-1.5">
+        <i class="fa-solid fa-check-double"></i>
+        <span>Tanggapan & Tindak Lanjut Pengurus RT</span>
+      </h4>
+      {% if laporan.tanggapan_petugas %}
+      <p class="text-slate-200"><span class="text-slate-400">Tanggapan:</span> {{ laporan.tanggapan_petugas }}</p>
+      {% endif %}
+      {% if laporan.tindak_lanjut %}
+      <p class="text-slate-200"><span class="text-slate-400">Aksi Lapangan:</span> {{ laporan.tindak_lanjut }}</p>
+      {% endif %}
+      <div class="text-[10px] text-slate-500 pt-1">Diperbarui pada: {{ laporan.updated_at.strftime('%d-%m-%Y %H:%M') }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Admin Response Box -->
+    {% if current_user and current_user.is_admin() %}
+    <div class="pt-5 border-t border-[#1f2a4a]">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3 flex items-center space-x-2">
+        <i class="fa-solid fa-reply"></i>
+        <span>Tanggapi & Perbarui Status Laporan</span>
+      </h4>
+
+      <form method="POST" action="{{ url_for('pelaporan_tanggapi', id=laporan.id) }}" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Status Penanganan</label>
+          <select name="status" class="dark-input">
+            <option value="Diproses" {% if laporan.status == 'Diproses' %}selected{% endif %}>Sedang Ditindaklanjuti (Diproses)</option>
+            <option value="Selesai" {% if laporan.status == 'Selesai' %}selected{% endif %}>Masalah Selesai / Tuntas (Selesai)</option>
+            <option value="Menunggu" {% if laporan.status == 'Menunggu' %}selected{% endif %}>Menunggu Verifikasi (Menunggu)</option>
+            <option value="Ditolak" {% if laporan.status == 'Ditolak' %}selected{% endif %}>Laporan Ditolak / Tidak Relevan (Ditolak)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Tanggapan Resmi Pengurus RT</label>
+          <textarea name="tanggapan_petugas" rows="2" placeholder="Pesan tanggapan kepada warga pelapor..." class="dark-input">{{ laporan.tanggapan_petugas or '' }}</textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Catatan Tindak Lanjut Lapangan</label>
+          <input type="text" name="tindak_lanjut" value="{{ laporan.tindak_lanjut or '' }}" placeholder="Contoh: Petugas teknis telah mengganti trafo/bohlam PJU pada sore hari" class="dark-input">
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
+            Simpan Tanggapan Pengurus
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+{% endblock %}

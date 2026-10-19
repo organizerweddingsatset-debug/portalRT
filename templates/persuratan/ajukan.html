@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Ajukan Surat Baru - Portal RT 09{% endblock %}
+{% block page_title %}Pengajuan Surat Administrasi Warga{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('persuratan_index') }}"
+      class="text-xs text-slate-400 hover:text-white flex items-center space-x-1.5">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Kembali ke Daftar Persuratan</span>
+    </a>
+  </div>
+
+  <div class="card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a]">
+      <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+        <i class="fa-solid fa-file-pen text-indigo-400"></i>
+        <span>Formulir Pengajuan Surat RT 09</span>
+      </h3>
+      <p class="text-xs text-slate-400 mt-1">Pilih jenis template surat yang dibutuhkan dan isi informasi pendukung
+        dengan jelas.</p>
+    </div>
+
+    <form method="POST" class="space-y-5">
+
+      <!-- Pemohon -->
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Nama Warga Pemohon *</label>
+        {% if current_user and current_user.role == 'warga' and current_user.warga %}
+        <input type="hidden" name="warga_id" value="{{ current_user.warga.id }}">
+        <input type="text" readonly value="{{ current_user.warga.nama }} (NIK: {{ current_user.warga.nik }})"
+          class="dark-input bg-[#0d1224] text-slate-400 font-bold">
+        {% else %}
+        <select name="warga_id" required class="dark-input">
+          <option value="">-- Pilih Warga Pemohon --</option>
+          {% for w in warga_all %}
+          <option value="{{ w.id }}">{{ w.nama }} (NIK: {{ w.nik }} - Rumah: {{ w.no_rumah }})</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+      </div>
+
+      <!-- Template Selector -->
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Pilih Template Surat Kebutuhan *</label>
+        <select name="jenis_surat" id="selectJenisSurat" onchange="toggleExtraFields()" required class="dark-input">
+          <option value="Surat Pengantar RT (KTP/KK)">1. Surat Pengantar RT (Pembuatan/Pembaruan KTP / KK)</option>
+          <option value="Surat Keterangan Domisili">2. Surat Keterangan Domisili Tempat Tinggal</option>
+          <option value="Surat Keterangan Usaha (SKU)">3. Surat Keterangan Usaha (SKU - Bank / Legalitas)</option>
+          <option value="Surat Keterangan Tidak Mampu (SKTM)">4. Surat Keterangan Tidak Mampu (SKTM -
+            Beasiswa/Kesehatan)</option>
+          <option value="Surat Keterangan Kematian">5. Surat Keterangan Kematian Warga</option>
+          <option value="Surat Keterangan Kelahiran">6. Surat Keterangan Kelahiran Warga Baru</option>
+          <option value="Surat Izin Keramaian">7. Surat Pengantar / Izin Acara Keramaian</option>
+        </select>
+      </div>
+
+      <!-- Keperluan -->
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Keperluan / Tujuan Surat *</label>
+        <textarea name="keperluan" rows="3" required
+          placeholder="Contoh: Untuk persyaratan pembuatan Kartu Keluarga baru di Kantor Kelurahan Mojosarirejo"
+          class="dark-input"></textarea>
+      </div>
+
+      <!-- Dynamic Template Fields: SKU -->
+      <div id="fieldSKU" class="hidden p-4 rounded-lg bg-[#0e1428] border border-indigo-900/50 space-y-3">
+        <div class="text-xs font-bold text-indigo-400 uppercase tracking-wide">Data Tambahan Keterangan Usaha (SKU)
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">Nama Usaha / Toko</label>
+            <input type="text" name="extra_nama_usaha" placeholder="Contoh: Toko Berkah Mandiri"
+              class="dark-input text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">Bidang / Jenis Usaha</label>
+            <input type="text" name="extra_bidang_usaha" placeholder="Contoh: Kuliner / Sembako / Jasa Konveksi"
+              class="dark-input text-xs">
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Template Fields: Kematian -->
+      <div id="fieldKematian" class="hidden p-4 rounded-lg bg-[#0e1428] border border-indigo-900/50 space-y-3">
+        <div class="text-xs font-bold text-indigo-400 uppercase tracking-wide">Data Tambahan Keterangan Kematian</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">Nama Almarhum / Almarhumah</label>
+            <input type="text" name="extra_nama_almarhum" placeholder="Nama lengkap almarhum"
+              class="dark-input text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">Tanggal Meninggal Dunia</label>
+            <input type="date" name="extra_tgl_meninggal" class="dark-input text-xs">
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Template Fields: Izin Keramaian -->
+      <div id="fieldKeramaian" class="hidden p-4 rounded-lg bg-[#0e1428] border border-indigo-900/50 space-y-3">
+        <div class="text-xs font-bold text-indigo-400 uppercase tracking-wide">Data Tambahan Izin Keramaian / Acara
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">Jenis Acara / Hajat</label>
+            <input type="text" name="extra_jenis_acara" placeholder="Contoh: Pernikahan / Khitanan / Pengajian Akbar"
+              class="dark-input text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">Tanggal Pelaksanaan Acara</label>
+            <input type="date" name="extra_tgl_acara" class="dark-input text-xs">
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-[#1f2a4a] flex items-center justify-end space-x-3">
+        <a href="{{ url_for('persuratan_index') }}"
+          class="px-4 py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e] transition-colors">
+          Batal
+        </a>
+        <button type="submit"
+          class="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+          <span>Kirim Permohonan Surat</span>
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+<script>
+  function toggleExtraFields() {
+    const val = document.getElementById('selectJenisSurat').value;
+    document.getElementById('fieldSKU').classList.toggle('hidden', !val.includes('SKU'));
+    document.getElementById('fieldKematian').classList.toggle('hidden', !val.includes('Kematian'));
+    document.getElementById('fieldKeramaian').classList.toggle('hidden', !val.includes('Keramaian'));
+  }
+  document.addEventListener('DOMContentLoaded', toggleExtraFields);
+</script>
+{% endblock %}

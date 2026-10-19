@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Serah Terima Keterhunian Rumah {{ rumah.no_rumah }} - Portal RT 09{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <!-- Breadcrumbs -->
+  <div class="flex items-center space-x-2 text-xs text-slate-400">
+    <a href="{{ url_for('rumah_index') }}" class="hover:text-indigo-400 transition-colors">
+      <i class="fa-solid fa-arrow-left mr-1"></i> Data Rumah
+    </a>
+    <span>/</span>
+    <a href="{{ url_for('rumah_detail', id=rumah.id) }}" class="hover:text-indigo-400 transition-colors">
+      Buku Besar Unit {{ rumah.no_rumah }}
+    </a>
+    <span>/</span>
+    <span class="text-white font-medium">Serah Terima & Pergantian Penghuni</span>
+  </div>
+
+  <!-- Header Banner -->
+  <div class="card-glow rounded-2xl p-6 bg-[#141b31] border border-[#212c4e]">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-10 h-10 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold text-lg">
+        <i class="fa-solid fa-right-left"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-white tracking-tight">Serah Terima Keterhunian: Rumah {{ rumah.no_rumah }}</h1>
+        <p class="text-xs text-slate-400">Prosedur pergantian penghuni untuk menjaga akuntabilitas iuran warga dan keutuhan buku besar rumah.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outstanding Dues Audit Alert -->
+  {% if tunggakan_lama and tunggakan_lama|length > 0 %}
+  <div class="p-4 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-200 text-xs space-y-2">
+    <div class="flex items-center gap-2 font-bold text-sm text-rose-300">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>Peringatan Audit: Penghuni Saat Ini Memiliki Tunggakan Iuran!</span>
+    </div>
+    <p>
+      Penghuni saat ini (<strong>{{ rumah.penghuni_aktif.nama if rumah.penghuni_aktif else '-' }}</strong>) 
+      tercatat memiliki <strong>{{ tunggakan_lama|length }} bulan</strong> tagihan iuran yang belum diselesaikan:
+    </p>
+    <ul class="list-disc list-inside space-y-0.5 text-rose-300/90 pl-1 font-mono text-[11px]">
+      {% for t in tunggakan_lama %}
+      <li>Periode Bulan {{ t.periode_bulan }}/{{ t.periode_tahun }} &mdash; Rp {{ "{:,.0f}".format(t.jumlah) }}</li>
+      {% endfor %}
+    </ul>
+    <p class="text-[11px] text-rose-200/80 pt-1">
+      Pastikan tunggakan telah diselesaikan saat pengembalian deposit/kunci, atau catat pertanggungjawaban pada kolom catatan di bawah.
+    </p>
+  </div>
+  {% else %}
+  <div class="p-4 rounded-xl bg-emerald-950/50 border border-emerald-800/60 text-emerald-200 text-xs flex items-center gap-2">
+    <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+    <span><strong>Audit Bersih:</strong> Penghuni saat ini tidak memiliki tunggakan iuran RT. Seluruh tagihan sebelumnya lunas.</span>
+  </div>
+  {% endif %}
+
+  <!-- Handover Form Card -->
+  <div class="card-glow rounded-2xl p-6 bg-[#141b31] border border-[#212c4e]">
+    <form method="POST" action="{{ url_for('rumah_serah_terima', id=rumah.id) }}" class="space-y-5">
+      
+      <!-- Current Status Snapshot -->
+      <div class="p-4 rounded-xl bg-[#0d1222] border border-[#1b2542] text-xs grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Penghuni Aktif Saat Ini (Keluar)</span>
+          <span class="font-bold text-white text-sm">{{ rumah.penghuni_aktif.nama if rumah.penghuni_aktif else 'Kosong' }}</span>
+          <span class="text-[11px] text-slate-400 block mt-0.5">Tipe: {{ rumah.tipe_penghuni }}</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold block">Pemilik Sah Properti</span>
+          <span class="font-bold text-slate-200 text-sm">{{ rumah.pemilik.nama if rumah.pemilik else 'Belum diset' }}</span>
+          <span class="text-[11px] text-slate-400 block mt-0.5">KK: {{ rumah.pemilik.no_kk if rumah.pemilik else '-' }}</span>
+        </div>
+      </div>
+
+      <!-- Action Type Selection -->
+      <div>
+        <span class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+          Pilih Jenis Pergantian Keterhunian <span class="text-rose-400">*</span>
+        </span>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          
+          <label for="radio_ganti" class="cursor-pointer p-3.5 rounded-xl border border-[#212c4e] bg-[#0d1222] hover:bg-[#192344] transition-all flex flex-col justify-between">
+            <div class="flex items-center space-x-2">
+              <input type="radio" id="radio_ganti" name="action_type" value="ganti_penghuni" checked 
+                     onchange="toggleNewTenantFields(this.value)" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="font-bold text-white text-xs">Penyewa / Pengontrak Baru</span>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2">Rumah tetap dikontrakkan ke warga lain.</p>
+          </label>
+
+          <label for="radio_kembali" class="cursor-pointer p-3.5 rounded-xl border border-[#212c4e] bg-[#0d1222] hover:bg-[#192344] transition-all flex flex-col justify-between">
+            <div class="flex items-center space-x-2">
+              <input type="radio" id="radio_kembali" name="action_type" value="kembali_ke_pemilik" 
+                     onchange="toggleNewTenantFields(this.value)" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="font-bold text-emerald-400 text-xs">Kembali Dihuni Pemilik</span>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2">Masa sewa habis dan kembali ditempati pemilik sah.</p>
+          </label>
+
+          <label for="radio_kosong" class="cursor-pointer p-3.5 rounded-xl border border-[#212c4e] bg-[#0d1222] hover:bg-[#192344] transition-all flex flex-col justify-between">
+            <div class="flex items-center space-x-2">
+              <input type="radio" id="radio_kosong" name="action_type" value="kosongkan" 
+                     onchange="toggleNewTenantFields(this.value)" class="text-indigo-600 focus:ring-indigo-500">
+              <span class="font-bold text-amber-400 text-xs">Kosongkan Unit</span>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2">Penyewa keluar, rumah sementara tidak berpenghuni.</p>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- New Tenant Selector (Conditional) -->
+      <div id="newTenantContainer" class="space-y-4">
+        <div>
+          <label for="newWargaSelect" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Pilih Warga Penghuni Baru <span class="text-rose-400">*</span>
+          </label>
+          <select name="new_warga_id" id="newWargaSelect" class="dark-input text-xs py-2.5">
+            <option value="">-- Pilih Warga dari Database RT 09 --</option>
+            {% for w in warga_list %}
+              {% if w.id != rumah.penghuni_aktif_id %}
+              <option value="{{ w.id }}">{{ w.nama }} (NIK: {{ w.nik }} &bull; Rumah saat ini: {{ w.no_rumah or '-' }})</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <p class="text-[11px] text-slate-400 mt-1">
+            Jika warga belum ada di daftar, daftarkan terlebih dahulu di menu <strong>Data Warga &gt; Tambah Warga</strong>.
+          </p>
+        </div>
+
+        <div>
+          <label for="tipe_penghuni_baru" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Tipe Status Penghuni Baru
+          </label>
+          <select id="tipe_penghuni_baru" name="tipe_penghuni_baru" class="dark-input text-xs py-2">
+            <option value="Pengontrak" selected>Pengontrak / Penyewa Musiman</option>
+            <option value="Pemilik">Pemilik Rumah</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Handover Date -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="tgl_serah_terima" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Tanggal Efektif Serah Terima <span class="text-rose-400">*</span>
+          </label>
+          <input type="date" id="tgl_serah_terima" name="tgl_serah_terima" required value="{{ today.strftime('%Y-%m-%d') }}"
+                 class="dark-input text-xs py-2">
+        </div>
+
+        <div>
+          <label for="status_tunggakan" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            Status Pelunasan Tunggakan Lama
+          </label>
+          <select id="status_tunggakan" name="status_tunggakan" class="dark-input text-xs py-2">
+            <option value="Lunas" {% if not tunggakan_lama %}selected{% endif %}>Lunas Bersih (Tidak ada tanggungan)</option>
+            <option value="Ada Tunggakan" {% if tunggakan_lama %}selected{% endif %}>Ada Tunggakan (Dialihkan/Dicatat khusus)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label for="catatan_serah_terima" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+          Catatan Berita Acara Serah Terima
+        </label>
+        <textarea id="catatan_serah_terima" name="catatan_serah_terima" rows="3" 
+                  placeholder="Contoh: Serah terima kunci 2 set, meteran listrik 2451 kWh, meter air 182 m3. Tagihan iuran RT sampai April 2026 telah diselesaikan pengontrak lama."
+                  class="dark-input text-xs py-2"></textarea>
+      </div>
+
+      <!-- Submit & Cancel -->
+      <div class="pt-4 border-t border-[#1d2745] flex items-center justify-end space-x-3">
+        <a href="{{ url_for('rumah_detail', id=rumah.id) }}" 
+           class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors">
+          Batal
+        </a>
+        <button type="submit" 
+                class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2">
+          <i class="fa-solid fa-check"></i>
+          <span>Simpan Serah Terima Keterhunian</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+
+<script>
+function toggleNewTenantFields(type) {
+  const container = document.getElementById('newTenantContainer');
+  const select = document.getElementById('newWargaSelect');
+  if (type === 'ganti_penghuni') {
+    container.style.display = 'block';
+    select.required = true;
+  } else {
+    container.style.display = 'none';
+    select.required = false;
+  }
+}
+</script>
+{% endblock %}

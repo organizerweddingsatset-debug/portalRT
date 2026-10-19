@@ -1,0 +1,251 @@
+/* Custom styles for PortalRT dark theme and print */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-main: #0c101d;
+  --bg-sidebar: #0e1324;
+  --bg-card: #141b31;
+  --bg-card-hover: #19223e;
+  --border-color: #212c4e;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-purple: #6366f1;
+  --accent-purple-glow: rgba(99, 102, 241, 0.35);
+}
+
+/* Light Theme Variables & Overrides */
+[data-theme="light"] {
+  --bg-main: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+}
+
+[data-theme="light"] body {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .bg-\[\#0b0f1d\],
+[data-theme="light"] main.bg-\[\#0b0f1d\] {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="light"] aside#sidebar,
+[data-theme="light"] .bg-\[\#0d1224\],
+[data-theme="light"] header.bg-\[\#0e1428\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .card-glow,
+[data-theme="light"] .bg-\[\#141b31\],
+[data-theme="light"] .bg-\[\#12182b\],
+[data-theme="light"] .bg-\[\#101626\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .card-glow:hover {
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .border-\[\#1f2a4a\],
+[data-theme="light"] .border-\[\#1b2542\],
+[data-theme="light"] .border-\[\#212c4e\],
+[data-theme="light"] .border-\[\#24335c\],
+[data-theme="light"] .border-\[\#263560\],
+[data-theme="light"] .border-\[\#2b3964\],
+[data-theme="light"] .border-\[\#1a233d\] {
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .text-white {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .text-slate-100,
+[data-theme="light"] .text-slate-200 {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .text-slate-300 {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .text-slate-400 {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+[data-theme="light"] .dark-input {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .dark-input:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+}
+
+[data-theme="light"] .dark-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme="light"] .nav-pill-inactive {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .nav-pill-inactive:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .bg-\[\#172140\],
+[data-theme="light"] .bg-\[\#19223e\] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] footer {
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+  background-color: #ffffff !important;
+}
+
+[data-theme="light"] tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="light"] th {
+  color: #475569 !important;
+}
+
+[data-theme="light"] #themeToggleBtn {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #b45309 !important;
+}
+[data-theme="light"] #themeToggleBtn:hover {
+  background-color: #e2e8f0 !important;
+}
+[data-theme="light"] #themeToggleMobileBtn {
+  color: #b45309 !important;
+}
+[data-theme="light"] #pwaInstallBanner {
+  background: linear-gradient(135deg, #312e81 0%, #4338ca 100%) !important;
+  border-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #0b0f1d;
+  color: #e2e8f0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1222;
+}
+::-webkit-scrollbar-thumb {
+  background: #232d4b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b4870;
+}
+
+/* Card Glow Effect */
+.card-glow {
+  background-color: #141a30;
+  border: 1px solid #1f2947;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+  transition: all 0.2s ease-in-out;
+}
+.card-glow:hover {
+  border-color: #2d3b66;
+}
+
+/* Active Nav Pill */
+.nav-pill-active {
+  background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+}
+
+.nav-pill-inactive {
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+.nav-pill-inactive:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+}
+
+/* Custom Form Controls */
+.dark-input {
+  background-color: #0f1527;
+  border: 1px solid #232d4b;
+  color: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.875rem;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+.dark-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+.dark-input::placeholder {
+  color: #475569;
+}
+
+/* Print Stylesheet for Official Letters & Receipts */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 1cm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}

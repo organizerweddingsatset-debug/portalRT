@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Catat Transaksi Kas - Portal RT 09{% endblock %}
+{% block page_title %}Catat {{ jenis }} Kas RT{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('kas_index') }}" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1.5">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Kembali ke Transaksi Kas</span>
+    </a>
+  </div>
+
+  <div class="card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+    
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a] flex items-center justify-between">
+      <div>
+        <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+          {% if jenis == 'Pemasukan' %}
+          <span class="text-emerald-400"><i class="fa-solid fa-circle-plus"></i></span>
+          <span>Input Penerimaan / Pemasukan Kas</span>
+          {% else %}
+          <span class="text-rose-400"><i class="fa-solid fa-circle-minus"></i></span>
+          <span>Input Pengeluaran Kas RT</span>
+          {% endif %}
+        </h3>
+        <p class="text-xs text-slate-400 mt-1">Catat mutasi keuangan kas RT 09 untuk transparansi laporan akuntansi.</p>
+      </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-5">
+      <input type="hidden" name="jenis" value="{{ jenis }}">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kategori Transaksi *</label>
+          <select name="kategori" required class="dark-input">
+            {% if jenis == 'Pemasukan' %}
+              <option value="Iuran Warga">Iuran Warga (Tunai Langsung)</option>
+              <option value="Donasi / Sumbangan">Donasi / Sumbangan Warga / Donatur</option>
+              <option value="Kas Awal">Kas Awal / Saldo Pindahan</option>
+              <option value="Penyewaan Inventaris">Penyewaan Inventaris (Tenda/Kursi)</option>
+              <option value="Bunga Bank / Pendapatan Lain">Bunga Bank / Pendapatan Lain</option>
+            {% else %}
+              <option value="Operasional RT">Operasional RT & Kesekretariatan</option>
+              <option value="Kebersihan Lingkungan">Kebersihan Lingkungan & Angkut Sampah</option>
+              <option value="Keamanan">Honor Satpam & Pos Keamanan</option>
+              <option value="Pemeliharaan Fasilitas">Pemeliharaan Lampu Jalan & Saluran Air</option>
+              <option value="Kegiatan Warga">Kegiatan Warga (17 Agustus / Kerja Bakti / Rapat)</option>
+              <option value="Sosial & Santunan">Sosial, Duka Cita & Santunan Warga</option>
+              <option value="Lain-lain">Pengeluaran Lainnya</option>
+            {% endif %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Tanggal Transaksi *</label>
+          <input type="date" name="tanggal" value="{{ today_str }}" required class="dark-input">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Judul / Uraian Transaksi *</label>
+        <input type="text" name="judul" required placeholder="Contoh: Pembelian lampu penerangan jalan 5 buah atau Sumbangan warga Blok B"
+               class="dark-input">
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Nominal (Rupiah) *</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold text-xs">Rp</span>
+          <input type="number" name="jumlah" step="1000" min="1000" required placeholder="0"
+                 class="dark-input pl-9 text-base font-mono font-bold text-white">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Keterangan / Rincian Tambahan</label>
+        <textarea name="keterangan" rows="3" placeholder="Rincian nota, nomor kuitansi, atau catatan transaksi..."
+                  class="dark-input"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Unggah Foto Nota / Kuitansi (Opsional)</label>
+        <input type="file" name="bukti_transaksi" accept="image/*,application/pdf"
+               class="dark-input py-1.5 text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-indigo-600 file:text-white">
+      </div>
+
+      <div class="pt-4 border-t border-[#1f2a4a] flex items-center justify-end space-x-3">
+        <a href="{{ url_for('kas_index') }}" class="px-4 py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e] transition-colors">
+          Batal
+        </a>
+        <button type="submit" class="px-6 py-2.5 rounded-lg {% if jenis == 'Pemasukan' %}bg-emerald-600 hover:bg-emerald-500{% else %}bg-rose-600 hover:bg-rose-500{% endif %} text-white font-bold text-xs shadow-md transition-all flex items-center space-x-1.5">
+          <i class="fa-solid fa-floppy-disk text-xs"></i>
+          <span>Simpan Transaksi</span>
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+{% endblock %}

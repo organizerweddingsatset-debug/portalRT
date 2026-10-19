@@ -1,0 +1,17 @@
+{
+  "name": "portalrt",
+  "version": "1.0.0",
+  "description": "Aplikasi Web Manajemen RT lengkap berbasis **Flask (Python)**, **Database SQL (SQLite + SQLAlchemy)**, dan antarmuka modern bernuansa Dark Indigo dengan **Tailwind CSS**.",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.min.css --minify",
+    "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.min.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

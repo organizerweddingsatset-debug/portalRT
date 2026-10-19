@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Detail Warga: {{ warga.nama }} - Portal RT 09{% endblock %}
+{% block page_title %}Detail Data Warga{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Breadcrumbs & Quick Actions -->
+  <div class="flex items-center justify-between">
+    <a href="{{ url_for('warga_index') }}" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1.5">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Kembali ke Daftar Warga</span>
+    </a>
+    
+    {% if current_user and can_edit %}
+    <div class="flex items-center space-x-2">
+      <a href="{{ url_for('warga_edit', id=warga.id) }}" class="text-xs bg-amber-600/80 hover:bg-amber-500 text-white font-semibold px-3.5 py-1.5 rounded-lg border border-amber-500/50 flex items-center space-x-1 shadow-sm">
+        <i class="fa-solid fa-pen-to-square"></i>
+        <span>{% if current_user.role == 'warga' %}Edit Data Saya{% else %}Edit Warga{% endif %}</span>
+      </a>
+      <a href="{{ url_for('iuran_warga_detail', warga_id=warga.id) }}" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded-lg flex items-center space-x-1">
+        <i class="fa-solid fa-hand-holding-dollar"></i>
+        <span>Riwayat Iuran</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Profile Card -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Left Profile Summary Card -->
+    <div class="card-glow rounded-xl p-6 border border-[#212c4e] bg-[#141b31] space-y-4">
+      <div class="text-center pb-4 border-b border-[#1f2a4a]">
+        <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg border-2 border-indigo-400/50 mb-3">
+          {{ warga.nama[:2]|upper }}
+        </div>
+        <h3 class="text-base font-bold text-white">{{ warga.nama }}</h3>
+        <p class="text-xs text-slate-400 font-mono mt-0.5">NIK: {{ warga.nik }}</p>
+        <div class="mt-3 flex flex-wrap justify-center gap-1.5">
+          <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-950 text-indigo-300 border border-indigo-800">
+            {{ warga.status_keluarga }}
+          </span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800">
+            Warga {{ warga.status_tinggal }}
+          </span>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">Nomor KK</span>
+          <span class="font-mono text-white">{{ warga.no_kk }}</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">No. Rumah / Blok</span>
+          <span class="font-semibold text-indigo-300">{{ warga.no_rumah or '-' }}</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">Jenis Kelamin</span>
+          <span class="text-white">{{ warga.jenis_kelamin }}</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">Tempat, Tgl Lahir</span>
+          <span class="text-white text-right">{{ warga.tempat_lahir or '-' }}, {{ warga.tanggal_lahir.strftime('%d-%m-%Y') if warga.tanggal_lahir else '-' }}</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">Agama</span>
+          <span class="text-white">{{ warga.agama }}</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">Pekerjaan</span>
+          <span class="text-white">{{ warga.pekerjaan or '-' }}</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">Status Perkawinan</span>
+          <span class="text-white">{{ warga.status_perkawinan }}</span>
+        </div>
+        <div class="flex justify-between py-1.5 border-b border-[#1b2542]">
+          <span class="text-slate-400">No. WhatsApp / HP</span>
+          {% if warga.no_hp %}
+          <a href="https://wa.me/{{ warga.no_hp.replace('-', '').replace(' ', '') }}" target="_blank" class="text-emerald-400 font-mono hover:underline flex items-center space-x-1">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span>{{ warga.no_hp }}</span>
+          </a>
+          {% else %}
+          <span class="text-slate-500">-</span>
+          {% endif %}
+        </div>
+        <div class="py-1.5">
+          <span class="text-slate-400 block mb-1">Alamat Lengkap</span>
+          <p class="text-slate-300 bg-[#0e1428] p-2.5 rounded border border-[#212c4e] leading-relaxed">
+            {{ warga.alamat or '-' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side: Anggota Satu KK & Status Aktivitas -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Anggota Satu Kartu Keluarga (KK) -->
+      <div class="card-glow rounded-xl p-6 border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-[#1f2a4a]">
+          <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+            <i class="fa-solid fa-people-roof text-indigo-400"></i>
+            <span>Anggota Keluarga (Satu KK: {{ warga.no_kk }})</span>
+          </h4>
+          <span class="text-xs text-slate-400">{{ keluarga_list|length }} Terdaftar</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">Nama</th>
+                <th class="py-2.5 px-3">NIK</th>
+                <th class="py-2.5 px-3">Hubungan</th>
+                <th class="py-2.5 px-3">JK</th>
+                <th class="py-2.5 px-3">Pekerjaan</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#1b2440]">
+              {% for k in keluarga_list %}
+              <tr class="hover:bg-[#18213e]/50 {% if k.id == warga.id %}bg-indigo-950/30{% endif %}">
+                <td class="py-2.5 px-3 font-semibold text-white">
+                  <a href="{{ url_for('warga_detail', id=k.id) }}" class="hover:text-indigo-400">
+                    {{ k.nama }} {% if k.id == warga.id %}<span class="text-[10px] text-indigo-400 font-normal">(Profil Ini)</span>{% endif %}
+                  </a>
+                </td>
+                <td class="py-2.5 px-3 font-mono text-slate-400">{{ k.nik }}</td>
+                <td class="py-2.5 px-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] bg-[#19223e] border border-[#2b3964] text-slate-200">
+                    {{ k.status_keluarga }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-3">{{ k.jenis_kelamin }}</td>
+                <td class="py-2.5 px-3">{{ k.pekerjaan or '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Riwayat Iuran Singkat -->
+      <div class="card-glow rounded-xl p-6 border border-[#212c4e] bg-[#141b31]">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-[#1f2a4a]">
+          <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+            <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i>
+            <span>Status Iuran Terkini</span>
+          </h4>
+          <a href="{{ url_for('iuran_warga_detail', warga_id=warga.id) }}" class="text-xs text-indigo-400 hover:underline">
+            Semua Riwayat &rarr;
+          </a>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          {% for iur in recent_iuran %}
+          <div class="p-3 rounded-lg bg-[#0e1428] border border-[#212c4e] flex flex-col justify-between">
+            <div class="text-[11px] text-slate-400 font-semibold mb-1">
+              Bulan {{ iur.periode_bulan }}/{{ iur.periode_tahun }}
+            </div>
+            <div class="text-xs font-bold text-white mb-2">
+              Rp {{ "{:,.0f}".format(iur.jumlah).replace(',', '.') }}
+            </div>
+            <div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold 
+                {% if iur.status == 'Lunas' %}
+                  bg-emerald-950 text-emerald-300 border border-emerald-800
+                {% elif iur.status == 'Menunggu Konfirmasi' %}
+                  bg-sky-950 text-sky-300 border border-sky-800
+                {% else %}
+                  bg-amber-950 text-amber-300 border border-amber-800
+                {% endif %}">
+                {{ iur.status }}
+              </span>
+            </div>
+          </div>
+          {% else %}
+          <p class="text-xs text-slate-400 col-span-4 italic">Belum ada catatan iuran.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Data Rumah & Keterhunian - Portal RT 09{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header Section -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight">
+          {% if is_own_view %}Unit Rumah & Hunian Saya{% else %}Buku Besar Rumah & Status Keterhunian{% endif %}
+        </h1>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          Dual-Key Ledger
+        </span>
+      </div>
+      <p class="text-xs md:text-sm text-slate-400 mt-1">
+        {% if is_own_view %}
+          Informasi properti dan riwayat keterhunian rumah yang Anda huni atau miliki.
+        {% else %}
+          Manajemen data unit rumah, pencatatan pemilik vs penyewa aktif, serta buku besar iuran abadi lintas penghuni.
+        {% endif %}
+      </p>
+    </div>
+
+    {% if current_user.is_admin() %}
+    <div class="flex items-center gap-2">
+      <a href="{{ url_for('rumah_tambah') }}" 
+         class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition-all">
+        <i class="fa-solid fa-plus"></i>
+        <span>Tambah Unit Rumah</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Summary Metric Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <!-- Total Unit Rumah -->
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Rumah</p>
+          <h3 class="text-xl md:text-2xl font-bold text-white mt-1">{{ total_rumah }}</h3>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
+          <i class="fa-solid fa-city text-base"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dihuni Pemilik -->
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dihuni Pemilik</p>
+          <h3 class="text-xl md:text-2xl font-bold text-emerald-400 mt-1">{{ dihuni_pemilik }}</h3>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center">
+          <i class="fa-solid fa-house-user text-base"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dikontrakkan -->
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dikontrakkan</p>
+          <h3 class="text-xl md:text-2xl font-bold text-sky-400 mt-1">{{ dikontrakkan }}</h3>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-sky-600/20 text-sky-400 flex items-center justify-center">
+          <i class="fa-solid fa-key text-base"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rumah Kosong -->
+    <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Rumah Kosong</p>
+          <h3 class="text-xl md:text-2xl font-bold text-amber-400 mt-1">{{ kosong }}</h3>
+        </div>
+        <div class="w-10 h-10 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center">
+          <i class="fa-solid fa-door-closed text-base"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search (For Admins) -->
+  {% if not is_own_view %}
+  <div class="card-glow rounded-xl p-4 bg-[#141b31] border border-[#212c4e]">
+    <form method="GET" action="{{ url_for('rumah_index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      <!-- Search Input -->
+      <div class="sm:col-span-2 relative">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+          <i class="fa-solid fa-magnifying-glass text-xs"></i>
+        </span>
+        <input type="text" name="q" value="{{ request.args.get('q', '') }}" 
+               placeholder="Cari nomor rumah, blok, atau alamat..."
+               class="dark-input pl-8 text-xs py-2">
+      </div>
+
+      <!-- Filter Status Huni -->
+      <div>
+        <select name="status_huni" class="dark-input text-xs py-2" onchange="this.form.submit()">
+          <option value="">-- Semua Status Huni --</option>
+          <option value="Dihuni Pemilik" {% if request.args.get('status_huni') == 'Dihuni Pemilik' %}selected{% endif %}>Dihuni Pemilik</option>
+          <option value="Dikontrakkan" {% if request.args.get('status_huni') == 'Dikontrakkan' %}selected{% endif %}>Dikontrakkan</option>
+          <option value="Kosong" {% if request.args.get('status_huni') == 'Kosong' %}selected{% endif %}>Kosong</option>
+        </select>
+      </div>
+
+      <!-- Filter Tipe Penghuni -->
+      <div class="flex items-center gap-2">
+        <select name="tipe_penghuni" class="dark-input text-xs py-2 flex-1" onchange="this.form.submit()">
+          <option value="">-- Tipe Penghuni --</option>
+          <option value="Pemilik" {% if request.args.get('tipe_penghuni') == 'Pemilik' %}selected{% endif %}>Pemilik</option>
+          <option value="Pengontrak" {% if request.args.get('tipe_penghuni') == 'Pengontrak' %}selected{% endif %}>Pengontrak</option>
+        </select>
+        {% if request.args %}
+        <a href="{{ url_for('rumah_index') }}" class="px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs" title="Reset filter">
+          <i class="fa-solid fa-rotate-left"></i>
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Data Table -->
+  <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+    <div class="p-4 border-b border-[#212c4e] flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-list-check text-indigo-400 text-sm"></i>
+        <h2 class="text-sm font-bold text-white uppercase tracking-wider">
+          {% if is_own_view %}Daftar Properti Anda{% else %}Daftar Rumah Paguyuban RT 09{% endif %}
+        </h2>
+      </div>
+      <span class="text-xs text-slate-400">{{ rumah_list|length }} Rumah Ditampilkan</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-[#212c4e] bg-[#0f1527] text-slate-400 uppercase tracking-wider text-[11px]">
+            <th class="py-3 px-4">No. Rumah / Blok</th>
+            <th class="py-3 px-4">Pemilik Rumah</th>
+            <th class="py-3 px-4">Penghuni Aktif (Wajib Iuran)</th>
+            <th class="py-3 px-4 text-center">Status Huni</th>
+            <th class="py-3 px-4">Alamat Unit</th>
+            <th class="py-3 px-4 text-right">Aksi & Buku Besar</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#1b2542] text-slate-200">
+          {% for r in rumah_list %}
+          <tr class="hover:bg-[#18213e]/60 transition-colors">
+            
+            <!-- No. Rumah & Blok -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-950 border border-indigo-700/60 font-bold text-indigo-300 text-xs">
+                  {{ r.blok or 'R' }}
+                </span>
+                <div>
+                  <a href="{{ url_for('rumah_detail', id=r.id) }}" class="font-bold text-white hover:text-indigo-400 text-sm transition-colors">
+                    Rumah {{ r.no_rumah }}
+                  </a>
+                  <p class="text-[10px] text-slate-400">Blok {{ r.blok }} No. {{ r.nomor }}</p>
+                </div>
+              </div>
+            </td>
+
+            <!-- Pemilik Rumah -->
+            <td class="py-3 px-4">
+              {% if r.pemilik %}
+                <div class="font-medium text-slate-200">{{ r.pemilik.nama }}</div>
+                <div class="text-[10px] text-slate-400">KK: {{ r.pemilik.no_kk }}</div>
+              {% else %}
+                <span class="text-slate-500 italic">Belum diset</span>
+              {% endif %}
+            </td>
+
+            <!-- Penghuni Aktif (Wajib Iuran) -->
+            <td class="py-3 px-4">
+              {% if r.penghuni_aktif %}
+                <div class="flex items-center gap-1.5">
+                  <span class="font-semibold text-white">{{ r.penghuni_aktif.nama }}</span>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold 
+                    {% if r.tipe_penghuni == 'Pengontrak' %}
+                      bg-sky-950 text-sky-300 border border-sky-800
+                    {% else %}
+                      bg-emerald-950 text-emerald-300 border border-emerald-800
+                    {% endif %}">
+                    {{ r.tipe_penghuni }}
+                  </span>
+                </div>
+                <div class="text-[10px] text-slate-400">
+                  <i class="fa-solid fa-phone text-[9px] mr-1"></i>{{ r.penghuni_aktif.no_hp or '-' }}
+                </div>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">
+                  Tidak berpenghuni
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Status Huni -->
+            <td class="py-3 px-4 text-center">
+              {% if r.status_huni == 'Dihuni Pemilik' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800/80">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                  Dihuni Pemilik
+                </span>
+              {% elif r.status_huni == 'Dikontrakkan' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-950 text-sky-300 border border-sky-800/80">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mr-1.5"></span>
+                  Dikontrakkan
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-950 text-amber-300 border border-amber-800/80">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span>
+                  Kosong
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Alamat Unit -->
+            <td class="py-3 px-4 max-w-xs truncate text-slate-300">
+              {{ r.alamat or '-' }}
+            </td>
+
+            <!-- Actions -->
+            <td class="py-3 px-4 text-right">
+              <div class="inline-flex items-center gap-1.5">
+                <!-- Buku Besar Iuran Button -->
+                <a href="{{ url_for('rumah_detail', id=r.id) }}" 
+                   class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/70 text-indigo-300 text-xs transition-colors"
+                   title="Buku Besar Iuran & Linimasa Keterhunian">
+                  <i class="fa-solid fa-book-bookmark text-[10px]"></i>
+                  <span>Buku Besar</span>
+                </a>
+
+                <!-- Serah Terima / Ganti Penghuni -->
+                {% if current_user.is_admin() or r.pemilik_id == current_user.warga_id %}
+                <a href="{{ url_for('rumah_serah_terima', id=r.id) }}" 
+                   class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-amber-950/70 hover:bg-amber-900 border border-amber-700/60 text-amber-300 text-xs transition-colors"
+                   title="Serah Terima & Ganti Penghuni">
+                  <i class="fa-solid fa-right-left text-[10px]"></i>
+                  <span>Serah Terima</span>
+                </a>
+                {% endif %}
+
+                <!-- Edit Button (Admin) -->
+                {% if current_user.is_admin() %}
+                <a href="{{ url_for('rumah_edit', id=r.id) }}" 
+                   class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
+                   title="Edit Properti">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                {% endif %}
+              </div>
+            </td>
+
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="py-8 text-center text-slate-400">
+              <div class="flex flex-col items-center justify-center">
+                <i class="fa-solid fa-house-circle-xmark text-3xl text-slate-600 mb-2"></i>
+                <p>Belum ada data unit rumah yang sesuai kriteria.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

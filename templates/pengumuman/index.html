@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Pengumuman Resmi RT 09 - Portal RT 09{% endblock %}
+{% block page_title %}Pengumuman Warga RT 09{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h3 class="text-base font-bold text-white flex items-center space-x-2">
+        <i class="fa-solid fa-bullhorn text-rose-400"></i>
+        <span>Pusat Informasi & Pengumuman Resmi</span>
+      </h3>
+      <p class="text-xs text-slate-400 mt-0.5">Saluran komunikasi terpercaya dari Pengurus RT 09 / RW 14 kepada seluruh warga.</p>
+    </div>
+
+    {% if current_user and current_user.is_admin() %}
+    <button onclick="document.getElementById('pengumumanModal').classList.remove('hidden')" 
+            class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm flex items-center space-x-1.5 shrink-0">
+      <i class="fa-solid fa-plus text-xs"></i>
+      <span>Buat Pengumuman Baru</span>
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- Announcement List -->
+  <div class="space-y-4">
+    {% for item in pengumuman_list %}
+    <div class="card-glow rounded-xl p-6 border border-[#212c4e] bg-[#141b31] space-y-3 relative">
+      
+      <!-- Top info -->
+      <div class="flex items-start justify-between">
+        <div class="space-y-1">
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded text-[11px] font-bold 
+              {% if item.kategori == 'Penting' %}
+                bg-rose-950/80 text-rose-300 border border-rose-800
+              {% elif item.kategori == 'Kegiatan' %}
+                bg-emerald-950/80 text-emerald-300 border border-emerald-800
+              {% elif item.kategori == 'Iuran' %}
+                bg-amber-950/80 text-amber-300 border border-amber-800
+              {% else %}
+                bg-indigo-950/80 text-indigo-300 border border-indigo-800
+              {% endif %}">
+              {{ item.kategori }}
+            </span>
+
+            {% if item.prioritas == 'Tinggi' %}
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white animate-pulse">
+              Prioritas Tinggi
+            </span>
+            {% endif %}
+          </div>
+          <h4 class="text-base font-bold text-white tracking-wide pt-1">
+            {{ item.judul }}
+          </h4>
+        </div>
+
+        {% if current_user and current_user.is_admin() %}
+        <form method="POST" action="{{ url_for('pengumuman_hapus', id=item.id) }}" onsubmit="return confirm('Hapus pengumuman ini?');" class="shrink-0 ml-4">
+          <button type="submit" class="p-1.5 rounded hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 transition-colors" title="Hapus">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Content -->
+      <p class="text-xs md:text-sm text-slate-300 leading-relaxed text-justify whitespace-pre-line">
+        {{ item.konten }}
+      </p>
+
+      <!-- Footer Meta -->
+      <div class="pt-3 border-t border-[#1b2542] flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+        <div class="flex items-center space-x-3">
+          <span><i class="fa-regular fa-calendar mr-1"></i> {{ item.tanggal.strftime('%d %B %Y') if item.tanggal else '-' }}</span>
+          <span>&bull;</span>
+          <span><i class="fa-solid fa-user-tie mr-1"></i> {{ item.author }}</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <a href="{{ url_for('pengumuman_cetak', id=item.id) }}" target="_blank"
+             class="px-2.5 py-1 rounded bg-[#1e284a] hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-[11px] font-medium transition-colors flex items-center space-x-1">
+            <i class="fa-solid fa-print text-[11px]"></i>
+            <span>Cetak Surat Edaran</span>
+          </a>
+          <span class="text-emerald-400 hidden sm:flex items-center space-x-1">
+            <i class="fa-solid fa-circle-check text-[10px]"></i>
+            <span>Terverifikasi</span>
+          </span>
+        </div>
+      </div>
+
+    </div>
+    {% else %}
+    <div class="card-glow rounded-xl p-8 border border-[#212c4e] bg-[#141b31] text-center text-slate-400 text-sm">
+      <i class="fa-solid fa-bullhorn text-3xl mb-2 text-slate-600"></i>
+      <p>Belum ada pengumuman resmi yang dipublikasikan.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- Modal Tambah Pengumuman -->
+<div id="pengumumanModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="card-glow rounded-2xl max-w-xl w-full p-6 bg-[#141b31] border border-[#263560] relative">
+    <button onclick="document.getElementById('pengumumanModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+
+    <h3 class="text-base font-bold text-white mb-1">Buat Pengumuman Baru</h3>
+    <p class="text-xs text-slate-400 mb-4">Pengumuman akan langsung tampil di dashboard dan notifikasi portal warga</p>
+
+    <form method="POST" action="{{ url_for('pengumuman_tambah') }}" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Judul Pengumuman *</label>
+        <input type="text" name="judul" required placeholder="Contoh: Kerja Bakti Massal Menyambut HUT RI"
+               class="dark-input">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kategori</label>
+          <select name="kategori" class="dark-input">
+            <option value="Info Warga">Info Warga</option>
+            <option value="Penting">Penting & Mendesak</option>
+            <option value="Kegiatan">Kegiatan Lingkungan</option>
+            <option value="Iuran">Iuran & Kas</option>
+            <option value="Keamanan">Keamanan & Ronda</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Prioritas Tampilan</label>
+          <select name="prioritas" class="dark-input">
+            <option value="Biasa">Biasa (Standar)</option>
+            <option value="Tinggi">Tinggi (Pin / Alert Merah)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Isi Pengumuman Lengkap *</label>
+        <textarea name="konten" rows="5" required placeholder="Tuliskan isi pengumuman secara jelas dan terstruktur..."
+                  class="dark-input"></textarea>
+      </div>
+
+      <div class="pt-3 flex items-center justify-end space-x-2">
+        <button type="button" onclick="document.getElementById('pengumumanModal').classList.add('hidden')" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e]">
+          Batal
+        </button>
+        <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
+          Publikasikan Pengumuman
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1170 @@
+{% extends "base.html" %}
+
+{% block title %}Pengaturan Sistem - Portal RT 09{% endblock %}
+{% block page_title %}Pengaturan Sistem Portal RT 09{% endblock %}
+
+{% block head_extra %}
+<script src="{{ url_for('static', filename='js/qrcode.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header Info -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h3 class="text-base font-bold text-white flex items-center space-x-2">
+        <i class="fa-solid fa-sliders text-indigo-400"></i>
+        <span>Konfigurasi & Administrasi Portal RT</span>
+      </h3>
+      <p class="text-xs text-slate-400 mt-0.5">
+        {% if current_user and current_user.is_superadmin() %}
+        Kelola identitas lingkungan, template notifikasi WhatsApp API, QRIS pembayaran kas, import data kependudukan, serta manajemen pengguna dan hak akses (role).
+        {% else %}
+        Kelola identitas wilayah administrasi RT serta fasilitas import data kependudukan dan tagihan iuran warga secara massal.
+        {% endif %}
+      </p>
+    </div>
+    <div>
+      {% if current_user and current_user.is_superadmin() %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-purple-950 text-purple-300 border border-purple-800">
+        <i class="fa-solid fa-shield-halved mr-1.5"></i> Hak Akses: Superadmin (Penuh)
+      </span>
+      {% else %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-950 text-indigo-300 border border-indigo-800">
+        <i class="fa-solid fa-user-check mr-1.5"></i> Hak Akses: Identitas &amp; Import
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="flex items-center space-x-2 border-b border-[#1f2a4a] pb-2 overflow-x-auto">
+    <button onclick="switchTab('identitas')" id="tabBtn-identitas"
+      class="px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white shrink-0 transition-all">
+      <i class="fa-solid fa-landmark mr-1.5"></i> Identitas RT
+    </button>
+    {% if current_user and current_user.is_superadmin() %}
+    <button onclick="switchTab('notifikasi')" id="tabBtn-notifikasi"
+      class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] shrink-0 transition-all">
+      <i class="fa-solid fa-paper-plane mr-1.5"></i> Notifikasi API (Template)
+    </button>
+    <button onclick="switchTab('qris')" id="tabBtn-qris"
+      class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] shrink-0 transition-all">
+      <i class="fa-solid fa-qrcode mr-1.5"></i> Pengaturan QRIS
+    </button>
+    {% endif %}
+    <button onclick="switchTab('import')" id="tabBtn-import"
+      class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] shrink-0 transition-all">
+      <i class="fa-solid fa-file-import mr-1.5"></i> Import & Template
+    </button>
+    {% if current_user and current_user.is_superadmin() %}
+    <button onclick="switchTab('users')" id="tabBtn-users"
+      class="px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] shrink-0 transition-all">
+      <i class="fa-solid fa-users-gear mr-1.5"></i> User & Hak Akses (Role)
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- TAB 1: IDENTITAS RT -->
+  <div id="tabContent-identitas" class="card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a]">
+      <h4 class="text-sm font-bold text-white">Identitas & Wilayah Administrasi RT</h4>
+      <p class="text-xs text-slate-400 mt-1">Data identitas ini akan dicantumkan secara otomatis pada kop surat resmi,
+        laporan kas, dan portal.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('pengaturan_simpan_identitas') }}" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nomor RT</label>
+          <input type="text" name="nama_rt" value="{{ settings.get('nama_rt', 'RT 09') }}" class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nomor RW</label>
+          <input type="text" name="nama_rw" value="{{ settings.get('nama_rw', 'RW 14') }}" class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kelurahan</label>
+          <input type="text" name="kelurahan" value="{{ settings.get('kelurahan', 'Mojosarirejo') }}"
+            class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kecamatan</label>
+          <input type="text" name="kecamatan" value="{{ settings.get('kecamatan', 'Driyorejo') }}" class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kota / Kabupaten</label>
+          <input type="text" name="kota" value="{{ settings.get('kota', 'Jawa Timur') }}" class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Kode Pos</label>
+          <input type="text" name="kode_pos" value="{{ settings.get('kode_pos', '13790') }}" class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nama Ketua RT</label>
+          <input type="text" name="nama_ketua_rt" value="{{ settings.get('nama_ketua_rt', 'H. Bambang Sutrisno') }}"
+            class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nomor HP/WA Pengurus</label>
+          <input type="text" name="no_hp_rt" value="{{ settings.get('no_hp_rt', '0812-3456-7890') }}"
+            class="dark-input">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nominal Standar Iuran Bulanan Warga (Rp)</label>
+          <input type="number" name="iuran_bulanan" value="{{ settings.get('iuran_bulanan', '15000') }}" step="1000"
+            class="dark-input font-bold font-mono">
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-[#1f2a4a] flex justify-end">
+        <button type="submit"
+          class="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
+          Simpan Identitas RT
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {% if current_user and current_user.is_superadmin() %}
+  <!-- TAB 2: NOTIFIKASI API & TEMPLATE -->
+  <div id="tabContent-notifikasi" class="hidden card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a]">
+      <h4 class="text-sm font-bold text-white">Pengaturan API Notifikasi & Template Pesan</h4>
+      <p class="text-xs text-slate-400 mt-1">Konfigurasi integrasi WhatsApp Gateway API dan template pesan otomatis
+        untuk tagihan, surat, dan respon warga.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('pengaturan_simpan_notifikasi') }}" class="space-y-5">
+      <div class="p-4 rounded-lg bg-[#0e1428] border border-[#212c4e] space-y-3">
+        <div class="text-xs font-bold text-indigo-400 uppercase tracking-wide">Konfigurasi Gateway API (Fonnte / Wablas)
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">API Endpoint URL</label>
+            <input type="text" name="wa_api_url" value="{{ settings.get('wa_api_url', 'https://api.fonnte.com/send') }}"
+              class="dark-input font-mono text-xs">
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-300 mb-1">API Token / Secret Key</label>
+            <input type="password" name="wa_api_token"
+              value="{{ settings.get('wa_api_token', 'DEMO_RT09_SECRET_TOKEN_2026') }}"
+              class="dark-input font-mono text-xs">
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Template Tagihan Iuran Bulanan</label>
+          <textarea name="template_tagihan" rows="3"
+            class="dark-input text-xs">{{ settings.get('template_tagihan', '') }}</textarea>
+          <span class="text-[10px] text-slate-500">Variabel: {nama}, {rt_rw}, {periode}, {jumlah}, {status}</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Template Konfirmasi Pembayaran Lunas</label>
+          <textarea name="template_konfirmasi_lunas" rows="3"
+            class="dark-input text-xs">{{ settings.get('template_konfirmasi_lunas', '') }}</textarea>
+          <span class="text-[10px] text-slate-500">Variabel: {nama}, {rt_rw}, {periode}, {jumlah}</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Template Pengajuan Surat Selesai /
+            Disetujui</label>
+          <textarea name="template_surat_selesai" rows="3"
+            class="dark-input text-xs">{{ settings.get('template_surat_selesai', '') }}</textarea>
+          <span class="text-[10px] text-slate-500">Variabel: {nama}, {jenis_surat}, {nomor_surat}, {rt_rw}</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Template Tanggapan / Tindak Lanjut Pelaporan
+            Warga</label>
+          <textarea name="template_pelaporan_respon" rows="3"
+            class="dark-input text-xs">{{ settings.get('template_pelaporan_respon', '') }}</textarea>
+          <span class="text-[10px] text-slate-500">Variabel: {nama}, {judul}, {status}, {tanggapan}</span>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-[#1f2a4a] flex justify-end">
+        <button type="submit"
+          class="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
+          Simpan Template & Notifikasi API
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- TAB 3: PENGATURAN QRIS & PEMBAYARAN -->
+  <div id="tabContent-qris" class="hidden card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a]">
+      <h4 class="text-sm font-bold text-white">Pengaturan QRIS & Rekening Kas Paguyuban</h4>
+      <p class="text-xs text-slate-400 mt-1">Konfigurasi barcode QRIS resmi dan rekening bank tujuan pembayaran iuran
+        warga.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('pengaturan_simpan_qris') }}" enctype="multipart/form-data"
+      class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nama Merchant QRIS</label>
+          <input type="text" id="input_qris_merchant_name" name="qris_merchant_name"
+            value="{{ settings.get('qris_merchant_name', 'KAS PAGUYUBAN RT 09 RW 14') }}" class="dark-input font-bold"
+            oninput="document.getElementById('previewMerchantName').textContent = this.value || 'KAS PAGUYUBAN RT 09 RW 14'">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">National Merchant ID (NMID)</label>
+          <input type="text" id="input_qris_nmid" name="qris_nmid" value="{{ settings.get('qris_nmid', 'ID1020030040506') }}"
+            class="dark-input font-mono"
+            oninput="document.getElementById('previewNMID').textContent = this.value || '-'">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nama Bank Kas</label>
+          <input type="text" name="bank_nama" value="{{ settings.get('bank_nama', 'Bank Central Asia (BCA)') }}"
+            class="dark-input">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nomor Rekening Kas</label>
+          <input type="text" name="bank_rekening" value="{{ settings.get('bank_rekening', '8830-1928-31') }}"
+            class="dark-input font-mono font-bold text-indigo-400">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-slate-300 mb-1">Atas Nama Rekening</label>
+          <input type="text" name="bank_atas_nama" value="{{ settings.get('bank_atas_nama', 'PAGUYUBAN WARGA RT 09') }}"
+            class="dark-input">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-medium text-slate-300 mb-1">Petunjuk Pembayaran bagi Warga</label>
+          <textarea name="qris_instruksi" rows="2"
+            class="dark-input">{{ settings.get('qris_instruksi', '') }}</textarea>
+        </div>
+
+        <!-- INPUT QRIS PAYLOAD STRING (EMVCo) -->
+        <div class="md:col-span-2 space-y-2 p-4 rounded-xl bg-[#0d1326] border border-[#212c4e]">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-barcode text-indigo-400"></i>
+              <label class="text-xs font-bold text-white uppercase tracking-wider">QRIS Payload Data (EMVCo String Standard)</label>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span id="qrisStatusBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                <i class="fa-solid fa-spinner fa-spin mr-1"></i>Memeriksa...
+              </span>
+              <span class="text-[11px] text-slate-400 font-mono">
+                Panjang: <strong id="payloadCharCount" class="text-indigo-300">0</strong> kar
+              </span>
+            </div>
+          </div>
+          
+          <div class="relative">
+            <textarea id="input_qris_payload" name="qris_payload" rows="3"
+              class="dark-input font-mono text-[11px] text-indigo-200 bg-[#070b16] border-[#223055] focus:border-indigo-500 rounded-lg p-3 w-full pr-24 leading-relaxed"
+              placeholder="00020101021126600016ID.CO.QRIS.WWW... (Tempelkan payload string QRIS mentah resmi di sini)"
+              oninput="handlePayloadInput()">{{ settings.get('qris_payload', '') }}</textarea>
+            
+            <div class="absolute right-2.5 bottom-2.5 flex items-center space-x-1.5">
+              <button type="button" onclick="copyPayloadToClipboard()" id="btnCopyPayload"
+                class="px-2.5 py-1 text-[11px] font-semibold rounded bg-[#1e294b] hover:bg-indigo-600 text-slate-200 hover:text-white border border-[#314172] transition flex items-center space-x-1 shadow-sm">
+                <i class="fa-regular fa-copy text-xs" id="copyIcon"></i>
+                <span id="copyLabel">Salin</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 pt-1 border-t border-[#1a233d]">
+            <div class="flex items-center space-x-1 text-slate-400">
+              <i class="fa-solid fa-circle-info text-indigo-400"></i>
+              <span>Format EMVCo nasional dimulai dengan <code class="text-indigo-300 font-mono">000201010211...</code> dan diakhiri dengan checksum CRC16.</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button type="button" onclick="resetDefaultPayload()" class="text-indigo-400 hover:text-indigo-300 underline font-medium">
+                Gunakan Template Demo RT 09
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRATINJAU QRIS AKTIF -->
+      <div class="p-4 md:p-5 rounded-xl bg-[#0e1428] border border-[#212c4e] flex flex-col md:flex-row items-center md:items-start gap-4">
+        <!-- Live QR Code Container -->
+        <div class="bg-white p-2.5 rounded-xl shadow-lg border border-slate-200 shrink-0 text-center flex flex-col items-center">
+          <div id="qrisLivePreviewBox" class="w-32 h-32 flex items-center justify-center overflow-hidden">
+            <img id="qrisFallbackImg" src="{{ url_for('static', filename='img/qris_demo.svg') }}" alt="Preview QRIS" class="w-32 h-32 object-contain">
+          </div>
+          <span class="text-[9.5px] font-bold text-slate-700 tracking-wider mt-1.5 uppercase">QRIS STANDAR BI</span>
+        </div>
+
+        <div class="flex-1 space-y-2 text-center md:text-left">
+          <div class="flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <h5 class="text-xs font-bold text-white uppercase tracking-wider">Pratinjau Kode QRIS Aktif</h5>
+            <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              Live Rendering
+            </span>
+          </div>
+          <p class="text-[11.5px] text-slate-300 leading-relaxed">
+            Barcode ini dihasilkan langsung secara dinamis dari string payload di atas. Warga dapat memindainya langsung dari seluruh aplikasi mobile banking (BCA, Mandiri, BRI, BNI) dan dompet digital (GoPay, OVO, Dana, ShopeePay).
+          </p>
+          <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2 text-[11px] text-slate-400 border-t border-[#1a233d]">
+            <div><span class="text-slate-500">Merchant:</span> <strong id="previewMerchantName" class="text-slate-200">{{ settings.get('qris_merchant_name', 'KAS PAGUYUBAN RT 09 RW 14') }}</strong></div>
+            <div>•</div>
+            <div><span class="text-slate-500">NMID:</span> <strong id="previewNMID" class="text-indigo-400 font-mono">{{ settings.get('qris_nmid', 'ID1020030040506') }}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-[#1f2a4a] flex justify-end">
+        <button type="submit"
+          class="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-colors">
+          Simpan Konfigurasi QRIS
+        </button>
+      </div>
+    </form>
+
+    <!-- SECTION 2: INTEGRASI MAYAR.ID & WEBHOOK QRIS -->
+    <div class="mt-8 pt-6 border-t border-[#1f2a4a] space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#1b2545]">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <i class="fa-solid fa-bolt text-sm"></i>
+            </span>
+            <h4 class="text-sm font-bold text-white">Integrasi Payment Gateway Mayar.id & Webhook QRIS</h4>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Verifikasi otomatis pelunasan iuran warga via Webhook callback tanpa perlu periksa mutasi rekening kas secara manual.
+          </p>
+        </div>
+        <div class="flex items-center space-x-2">
+          {% if settings.get('mayar_is_active') == '1' %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+            Webhook Mayar Aktif
+          </span>
+          {% else %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+            <span class="w-2 h-2 rounded-full bg-slate-500 mr-1.5"></span>
+            Nonaktif
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- FORM PENGATURAN MAYAR -->
+      <form method="POST" action="{{ url_for('pengaturan_simpan_mayar') }}" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Status Integrasi Mayar</label>
+            <select name="mayar_is_active" class="dark-input">
+              <option value="1" {% if settings.get('mayar_is_active') == '1' %}selected{% endif %}>🟢 Aktif (Proses Webhook & Tagihan Dinamis)</option>
+              <option value="0" {% if settings.get('mayar_is_active') != '1' %}selected{% endif %}>⚪ Nonaktif (Gunakan QRIS Statis Manual)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Lingkungan (Environment)</label>
+            <select name="mayar_environment" class="dark-input">
+              <option value="sandbox" {% if settings.get('mayar_environment') == 'sandbox' %}selected{% endif %}>🧪 Sandbox Testing (api.mayar.io)</option>
+              <option value="production" {% if settings.get('mayar_environment') == 'production' %}selected{% endif %}>🚀 Production Live (api.mayar.id)</option>
+            </select>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-slate-300 mb-1">
+              Mayar API Key (Bearer Token)
+              <span class="text-slate-400 text-[10px] ml-1">(Diperlukan untuk membuat tagihan / link QRIS dinamis)</span>
+            </label>
+            <div class="relative">
+              <input type="password" id="input_mayar_api_key" name="mayar_api_key" 
+                     value="{{ settings.get('mayar_api_key', '') }}"
+                     placeholder="Contoh: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                     class="dark-input font-mono text-xs pr-10">
+              <button type="button" onclick="toggleApiKeyVisibility()" 
+                      class="absolute right-2.5 top-2.5 text-slate-400 hover:text-white transition-colors" title="Lihat/Sembunyikan API Key">
+                <i class="fa-regular fa-eye text-xs" id="apiKeyEyeIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="md:col-span-2">
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-medium text-slate-300">
+                Webhook Secret Token
+                <span class="text-slate-400 text-[10px] ml-1">(Digunakan untuk memvalidasi request resmi dari Mayar)</span>
+              </label>
+              <button type="button" onclick="generateRandomWebhookToken()" 
+                      class="text-[11px] text-indigo-400 hover:text-indigo-300 underline font-medium">
+                Generate Token Acak
+              </button>
+            </div>
+            <div class="flex items-center space-x-2">
+              <input type="text" id="input_mayar_webhook_token" name="mayar_webhook_token" 
+                     value="{{ settings.get('mayar_webhook_token', 'mayar_rt09_secret_token_2026') }}"
+                     class="dark-input font-mono text-xs text-indigo-300 font-bold"
+                     oninput="updateWebhookUrlDisplay(this.value)">
+              <button type="button" onclick="copyWebhookToken()" 
+                      class="px-3 py-2 rounded-lg bg-[#1a233d] hover:bg-indigo-600 text-slate-300 hover:text-white text-xs border border-[#2b3a67] transition flex items-center space-x-1 shrink-0">
+                <i class="fa-regular fa-copy text-xs" id="copyTokenIcon"></i>
+                <span id="copyTokenText">Salin</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end">
+          <button type="submit"
+                  class="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition-colors flex items-center space-x-1.5">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Simpan Konfigurasi Mayar</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- URL WEBHOOK BOX UNTUK DASHBOARD MAYAR -->
+      <div class="p-4 rounded-xl bg-[#0b1021] border border-[#212c4e] space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-link text-indigo-400"></i>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">URL Endpoint Webhook Portal RT</span>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-900/50 text-indigo-300 border border-indigo-700/50">
+            Event: payment.received
+          </span>
+        </div>
+
+        <p class="text-[11.5px] text-slate-300">
+          Salin URL di bawah ini dan daftarkan pada menu <strong class="text-white">Integrations &gt; Webhook</strong> di dashboard Mayar Anda:
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <input type="text" id="displayWebhookUrl" readonly 
+                 value="{{ request.host_url.rstrip('/') }}/api/webhook/mayar?token={{ settings.get('mayar_webhook_token', 'mayar_rt09_secret_token_2026') }}"
+                 class="dark-input font-mono text-[11px] text-amber-300 bg-[#060a17] border-[#223055] select-all flex-1 py-2">
+          <button type="button" onclick="copyWebhookUrlToClipboard()" id="btnCopyWebhookUrl"
+                  class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition flex items-center justify-center space-x-1.5 shrink-0 shadow-md">
+            <i class="fa-regular fa-copy" id="copyWebhookIcon"></i>
+            <span id="copyWebhookText">Salin Webhook URL</span>
+          </button>
+        </div>
+
+        <!-- Panduan Singkat -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-[#1a233d] text-[11px] text-slate-400">
+          <div class="flex items-start space-x-2">
+            <span class="w-4 h-4 rounded-full bg-slate-800 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[10px]">1</span>
+            <span>Login ke <strong>dashboard.mayar.id</strong></span>
+          </div>
+          <div class="flex items-start space-x-2">
+            <span class="w-4 h-4 rounded-full bg-slate-800 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[10px]">2</span>
+            <span>Buka <strong>Integrations &gt; Webhook</strong> &gt; Add Webhook URL</span>
+          </div>
+          <div class="flex items-start space-x-2">
+            <span class="w-4 h-4 rounded-full bg-slate-800 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[10px]">3</span>
+            <span>Aktifkan toggle event <strong class="text-amber-300">Purchase</strong> (Pembelian Produk) & simpan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIMULASI PENGUJIAN WEBHOOK LANGSUNG -->
+      <div class="p-4 rounded-xl bg-[#0f172f] border border-[#263768] space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-vial text-emerald-400"></i>
+            <h5 class="text-xs font-bold text-white uppercase tracking-wider">Uji Simulasi Webhook Mayar (One-Click Test)</h5>
+          </div>
+          <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
+            Tanpa Perlu Ngrok
+          </span>
+        </div>
+        <p class="text-[11.5px] text-slate-300">
+          Uji apakah webhook memproses pelunasan iuran secara instan dan mencatat ke Transaksi Kas RT secara otomatis.
+        </p>
+
+        <form method="POST" action="{{ url_for('pengaturan_mayar_test_webhook') }}" class="flex flex-col sm:flex-row items-center gap-2">
+          <select name="iuran_id" class="dark-input text-xs flex-1">
+            {% if iuran_unpaid and iuran_unpaid|length > 0 %}
+              {% for u in iuran_unpaid %}
+              <option value="{{ u.id }}">
+                #{{ u.id }} - {{ u.warga.nama }} (Periode {{ u.periode_bulan }}/{{ u.periode_tahun }} - Rp {{ '{:,.0f}'.format(u.jumlah).replace(',', '.') }})
+              </option>
+              {% endfor %}
+            {% else %}
+              <option value="">Semua tagihan sudah Lunas (Pilih acak)</option>
+            {% endif %}
+          </select>
+          <button type="submit" 
+                  class="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md flex items-center justify-center space-x-1.5 shrink-0">
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+            <span>Kirim Simulasi Webhook</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- TAB 4: IMPORT DATA & TEMPLATE -->
+  <div id="tabContent-import" class="hidden card-glow rounded-xl p-6 md:p-8 border border-[#212c4e] bg-[#141b31]">
+    <div class="pb-4 mb-6 border-b border-[#1f2a4a]">
+      <h4 class="text-sm font-bold text-white">Import Data Massal & Download Template</h4>
+      <p class="text-xs text-slate-400 mt-1">Unduh format template CSV/Excel resmi untuk mengunggah ratusan data
+        kependudukan atau tagihan iuran secara otomatis.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Import Data Warga -->
+      <div class="p-5 rounded-xl bg-[#0e1428] border border-[#212c4e] space-y-4">
+        <div class="flex items-center space-x-2 text-indigo-400 font-bold text-sm">
+          <i class="fa-solid fa-users"></i>
+          <span>1. Import Data Warga</span>
+        </div>
+        <p class="text-xs text-slate-300">Unggah berkas CSV data kependudukan warga RT 09 baru secara massal.</p>
+
+        <div class="p-3 bg-[#141b31] rounded-lg border border-[#232d4b] flex items-center justify-between">
+          <span class="text-xs text-slate-300">Template Format CSV Warga:</span>
+          <a href="{{ url_for('static', filename='templates_files/template_import_warga.csv') }}" download
+            class="text-xs bg-indigo-600/80 hover:bg-indigo-500 text-white font-semibold px-2.5 py-1 rounded">
+            <i class="fa-solid fa-download mr-1"></i> Unduh Template
+          </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('pengaturan_import_warga') }}" enctype="multipart/form-data"
+          class="space-y-3">
+          <input type="file" name="file_warga" accept=".csv" required class="dark-input py-1 text-xs">
+          <button type="submit"
+            class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow-sm">
+            Mulai Import Data Warga
+          </button>
+        </form>
+      </div>
+
+      <!-- Import Data Tagihan / Iuran -->
+      <div class="p-5 rounded-xl bg-[#0e1428] border border-[#212c4e] space-y-4">
+        <div class="flex items-center space-x-2 text-emerald-400 font-bold text-sm">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+          <span>2. Import Tagihan & Pembayaran</span>
+        </div>
+        <p class="text-xs text-slate-300">Unggah data tagihan atau catatan riwayat pembayaran iuran warga.</p>
+
+        <div class="p-3 bg-[#141b31] rounded-lg border border-[#232d4b] flex items-center justify-between">
+          <span class="text-xs text-slate-300">Template Format CSV Tagihan:</span>
+          <a href="{{ url_for('static', filename='templates_files/template_import_tagihan.csv') }}" download
+            class="text-xs bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold px-2.5 py-1 rounded">
+            <i class="fa-solid fa-download mr-1"></i> Unduh Template
+          </a>
+        </div>
+
+        <form method="POST" action="{{ url_for('pengaturan_import_tagihan') }}" enctype="multipart/form-data"
+          class="space-y-3">
+          <input type="file" name="file_tagihan" accept=".csv" required class="dark-input py-1 text-xs">
+          <button type="submit"
+            class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm">
+            Mulai Import Tagihan Iuran
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  {% if current_user and current_user.is_superadmin() %}
+  <!-- TAB 5: USER & ROLE MANAGEMENT -->
+  <div id="tabContent-users" class="hidden space-y-6">
+
+    <!-- User List Table -->
+    <div class="card-glow rounded-xl border border-[#212c4e] bg-[#141b31] overflow-hidden">
+      <div class="p-5 border-b border-[#1f2a4a] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h4 class="text-sm font-bold text-white">Daftar Akun Pengguna, Tipe & Peran (Role)</h4>
+          <p class="text-xs text-slate-400 mt-0.5">
+            <strong>Tipe Pengguna:</strong> Superadmin (Bukan Warga), Warga Pemilik, Warga Kontrak &bull;
+            <strong>Peran:</strong> Superadmin, Ketua RT, Pengurus, Warga
+          </p>
+        </div>
+        <button onclick="document.getElementById('modalTambahUser').classList.remove('hidden')"
+          class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3.5 py-2 rounded-lg shadow-sm flex items-center space-x-1.5 self-start sm:self-auto">
+          <i class="fa-solid fa-user-plus text-xs"></i>
+          <span>+ Tambah Akun Pengguna</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-[#0f152a] text-slate-400 uppercase text-[10px] border-b border-[#1f2a4a]">
+            <tr>
+              <th class="py-3 px-4">Username & Nama</th>
+              <th class="py-3 px-4">Tipe Pengguna</th>
+              <th class="py-3 px-4">Peran (Role)</th>
+              <th class="py-3 px-4">Warga Terkait</th>
+              <th class="py-3 px-4">Kontak / HP</th>
+              <th class="py-3 px-4">Status Akun</th>
+              <th class="py-3 px-4 text-center">Aksi / Kelola Peran</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1b2440]">
+            {% for u in user_list %}
+            <tr class="hover:bg-[#18213e]/60 transition-colors">
+              <td class="py-3 px-4">
+                <div class="font-bold text-white">{{ u.nama }}</div>
+                <div class="text-[11px] font-mono text-indigo-400">@{{ u.username }}</div>
+              </td>
+              <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded text-[11px] font-bold 
+                  {% if u.user_type == 'superadmin' %}
+                    bg-purple-950 text-purple-300 border border-purple-800
+                  {% elif u.user_type == 'warga_kontrak' %}
+                    bg-sky-950 text-sky-300 border border-sky-800
+                  {% else %}
+                    bg-emerald-950 text-emerald-300 border border-emerald-800
+                  {% endif %}">
+                  {{ u.user_type_display }}
+                </span>
+              </td>
+              <td class="py-3 px-4">
+                <span class="px-2.5 py-1 rounded text-[11px] font-bold 
+                  {% if u.role == 'superadmin' %}
+                    bg-purple-950 text-purple-300 border border-purple-800
+                  {% elif u.role in ['ketua_rt', 'pejabat'] %}
+                    bg-amber-950 text-amber-300 border border-amber-800
+                  {% elif u.role == 'pengurus' %}
+                    bg-emerald-950 text-emerald-300 border border-emerald-800
+                  {% else %}
+                    bg-slate-800 text-slate-300 border border-slate-700
+                  {% endif %}">
+                  {{ u.role_display }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-slate-300">
+                {% if u.warga %}
+                <div class="font-medium text-white">{{ u.warga.nama }}</div>
+                <div class="text-[10px] text-slate-400">Rumah: {{ u.warga.no_rumah or '-' }}</div>
+                {% else %}
+                <span class="italic text-purple-400/90 text-xs flex items-center">
+                  <i class="fa-solid fa-shield-halved mr-1"></i> Non-Warga (Akun Sistem)
+                </span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 font-mono">{{ u.no_hp or '-' }}</td>
+              <td class="py-3 px-4">
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-semibold {% if u.is_active %}bg-emerald-950 text-emerald-400 border border-emerald-800{% else %}bg-rose-950 text-rose-400 border border-rose-800{% endif %}">
+                  {{ 'Aktif' if u.is_active else 'Nonaktif' }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-center whitespace-nowrap">
+                <div class="inline-flex items-center space-x-1.5">
+                  <button type="button"
+                    data-id="{{ u.id }}"
+                    data-username="{{ u.username }}"
+                    data-nama="{{ u.nama }}"
+                    data-role="{{ u.role }}"
+                    data-warga-id="{{ u.warga_id or '' }}"
+                    data-no-hp="{{ u.no_hp or '' }}"
+                    data-active="{{ '1' if u.is_active else '0' }}"
+                    onclick="handleBtnEditUser(this)"
+                    class="px-2.5 py-1 rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 font-semibold text-[11px] transition-all flex items-center space-x-1 shadow-sm"
+                    title="Atur Peran / Pergantian Pengurus">
+                    <i class="fa-solid fa-user-pen"></i>
+                    <span>Edit Peran</span>
+                  </button>
+                  <form method="POST" action="{{ url_for('pengaturan_reset_password', id=u.id) }}" class="inline"
+                    onsubmit="return confirm('Reset password untuk akun @{{ u.username }} menjadi password standar (rt09pass)?');">
+                    <button type="submit"
+                      class="px-2 py-1 rounded bg-[#19223e] hover:bg-[#253258] text-amber-400 hover:text-amber-300 border border-[#2b3964] font-medium text-[11px] transition-all"
+                      title="Reset Sandi ke 'rt09pass'">
+                      <i class="fa-solid fa-key"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>
+
+{% if current_user and current_user.is_superadmin() %}
+<!-- Modal Tambah User -->
+<div id="modalTambahUser"
+  class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+  <div
+    class="card-glow rounded-2xl max-w-lg w-full p-6 bg-[#141b31] border border-[#263560] relative max-h-[90vh] overflow-y-auto">
+    <button onclick="document.getElementById('modalTambahUser').classList.add('hidden')"
+      class="absolute top-4 right-4 text-slate-400 hover:text-white">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+
+    <h3 class="text-base font-bold text-white mb-1">Tambah Akun Pengguna Baru</h3>
+    <p class="text-xs text-slate-400 mb-4">Buat kredensial login portal dengan menentukan tipe pengguna dan peran</p>
+
+    <form method="POST" action="{{ url_for('pengaturan_tambah_user') }}" class="space-y-4">
+      <div>
+        <label for="input_user_nama" class="block text-xs font-medium text-slate-300 mb-1">Nama Lengkap Pengguna
+          *</label>
+        <input id="input_user_nama" type="text" name="nama" required placeholder="Nama pengguna" class="dark-input">
+      </div>
+
+      <div>
+        <label for="input_username" class="block text-xs font-medium text-slate-300 mb-1">Username Login *</label>
+        <input id="input_username" type="text" name="username" required placeholder="username_unik"
+          class="dark-input font-mono">
+      </div>
+
+      <div>
+        <label for="input_password" class="block text-xs font-medium text-slate-300 mb-1">Kata Sandi Awal *</label>
+        <input id="input_password" type="password" name="password" required placeholder="Minimal 6 karakter"
+          class="dark-input">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="input_user_type" class="block text-xs font-medium text-slate-300 mb-1">Tipe Pengguna (User Type)
+            *</label>
+          <select id="input_user_type" name="user_type" required class="dark-input"
+            onchange="toggleWargaDropdown(this.value)">
+            <option value="warga_pemilik">Warga Pemilik</option>
+            <option value="warga_kontrak">Warga Kontrak</option>
+            <option value="superadmin">Superadmin (Bukan Warga)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="input_role" class="block text-xs font-medium text-slate-300 mb-1">Peran (Role) *</label>
+          <select id="input_role" name="role" required class="dark-input">
+            <option value="warga">Warga</option>
+            <option value="pengurus">Pengurus RT</option>
+            <option value="ketua_rt">Ketua RT</option>
+            <option value="superadmin">Superadmin</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="wargaSelectWrapper">
+        <label for="input_warga_id" class="block text-xs font-medium text-slate-300 mb-1">Tautkan ke Data Warga RT
+          (Opsional)</label>
+        <select id="input_warga_id" name="warga_id" class="dark-input">
+          <option value="">-- Pilih Data Warga Terdaftar --</option>
+          {% for w in warga_list %}
+          <option value="{{ w.id }}">{{ w.nama }} (Rumah {{ w.no_rumah or '-' }}) - {{ w.status_tinggal }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-[10px] text-slate-400 mt-1">Catatan: Superadmin tidak ditautkan ke data warga (Superadmin bukan
+          warga RT).</p>
+      </div>
+
+      <div>
+        <label for="input_user_hp" class="block text-xs font-medium text-slate-300 mb-1">Nomor WhatsApp / HP</label>
+        <input id="input_user_hp" type="text" name="no_hp" placeholder="08xxxxxxxxxx" class="dark-input font-mono">
+      </div>
+
+      <div class="pt-3 flex items-center justify-end space-x-2">
+        <button type="button" onclick="document.getElementById('modalTambahUser').classList.add('hidden')"
+          class="px-4 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e]">
+          Batal
+        </button>
+        <button type="submit"
+          class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md">
+          Simpan Akun
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Edit User & Peran (Pergantian Pengurus) -->
+<div id="modalEditUser"
+  class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+  <div
+    class="card-glow rounded-2xl max-w-lg w-full p-6 bg-[#141b31] border border-[#263560] relative max-h-[90vh] overflow-y-auto">
+    <button onclick="document.getElementById('modalEditUser').classList.add('hidden')"
+      class="absolute top-4 right-4 text-slate-400 hover:text-white">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+
+    <div class="flex items-center space-x-2.5 mb-1">
+      <div class="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+        <i class="fa-solid fa-user-gear text-sm"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-white">Atur Peran & Akun Pengguna</h3>
+        <p class="text-[11px] text-slate-400">Pengaturan pergantian pengurus RT, serah terima jabatan, atau update data akun</p>
+      </div>
+    </div>
+
+    <form id="formEditUser" method="POST" action="" class="space-y-4 mt-4">
+      <!-- Akun Info Bar -->
+      <div class="p-3 bg-[#0e1428] rounded-xl border border-[#212c4e] flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Username Pengguna</span>
+          <div id="edit_username_display" class="font-mono font-bold text-indigo-300 text-sm">@username</div>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Wewenang Superadmin</span>
+          <div class="text-[11px] text-emerald-400 font-medium flex items-center justify-end">
+            <i class="fa-solid fa-circle-check text-[10px] mr-1"></i> Izin Penuh
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label for="edit_nama" class="block text-xs font-medium text-slate-300 mb-1">Nama Lengkap Pengguna *</label>
+        <input id="edit_nama" type="text" name="nama" required class="dark-input">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="edit_role" class="block text-xs font-medium text-amber-300 mb-1">
+            <i class="fa-solid fa-id-badge mr-1"></i> Peran (Role) Pengguna *
+          </label>
+          <select id="edit_role" name="role" required class="dark-input font-bold text-amber-300 bg-[#0e1428]"
+            onchange="handleEditRoleChange(this.value)">
+            <option value="warga">Warga</option>
+            <option value="pengurus">Pengurus RT</option>
+            <option value="ketua_rt">Ketua RT</option>
+            <option value="superadmin">Superadmin</option>
+          </select>
+          <p class="text-[10px] text-slate-400 mt-1">Ubah peran saat terjadi pergantian pengurus RT.</p>
+        </div>
+
+        <div>
+          <label for="edit_is_active" class="block text-xs font-medium text-slate-300 mb-1">Status Keaktifan Akun *</label>
+          <select id="edit_is_active" name="is_active" class="dark-input">
+            <option value="1">Aktif (Dapat Login)</option>
+            <option value="0">Nonaktif (Diblokir)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="editWargaSelectWrapper">
+        <label for="edit_warga_id" class="block text-xs font-medium text-slate-300 mb-1">Tautkan ke Data Warga RT</label>
+        <select id="edit_warga_id" name="warga_id" class="dark-input">
+          <option value="">-- Tetap Gunakan Tautan Saat Ini / Non-Warga --</option>
+          {% for w in warga_list %}
+          <option value="{{ w.id }}">{{ w.nama }} (Rumah {{ w.no_rumah or '-' }}) - {{ w.status_tinggal }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-[10px] text-slate-400 mt-1">Ketua RT dan Pengurus RT sebaiknya ditautkan ke data warga masing-masing.</p>
+      </div>
+
+      <div>
+        <label for="edit_no_hp" class="block text-xs font-medium text-slate-300 mb-1">Nomor WhatsApp / HP</label>
+        <input id="edit_no_hp" type="text" name="no_hp" placeholder="08xxxxxxxxxx" class="dark-input font-mono">
+      </div>
+
+      <div>
+        <label for="edit_password" class="block text-xs font-medium text-slate-300 mb-1">
+          Ganti Kata Sandi <span class="text-slate-400 font-normal">(Kosongkan jika tidak ingin mengubah sandi)</span>
+        </label>
+        <input id="edit_password" type="password" name="password" placeholder="Biarkan kosong jika tidak diubah" class="dark-input">
+      </div>
+
+      <div class="pt-3 border-t border-[#1f2a4a] flex items-center justify-end space-x-2">
+        <button type="button" onclick="document.getElementById('modalEditUser').classList.add('hidden')"
+          class="px-4 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-[#1a2340] border border-[#212c4e]">
+          Batal
+        </button>
+        <button type="submit"
+          class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md flex items-center space-x-1.5">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Simpan Perubahan Peran</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  function switchTab(tab) {
+    const tabs = ['identitas', 'notifikasi', 'qris', 'import', 'users'];
+    tabs.forEach(t => {
+      const btn = document.getElementById('tabBtn-' + t);
+      const content = document.getElementById('tabContent-' + t);
+      if (btn && content) {
+        if (t === tab) {
+          btn.className = 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white shrink-0 transition-all';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'px-3.5 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-[#18213e] shrink-0 transition-all';
+          content.classList.add('hidden');
+        }
+      }
+    });
+    if (tab === 'qris') {
+      setTimeout(initQrisPreview, 50);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab') || window.location.hash.replace('#', '');
+    if (tabParam && ['identitas', 'notifikasi', 'qris', 'import', 'users'].includes(tabParam)) {
+      if (document.getElementById('tabBtn-' + tabParam)) {
+        switchTab(tabParam);
+      }
+    }
+    // Pre-initialize QRIS preview if payload is loaded
+    setTimeout(initQrisPreview, 100);
+  });
+
+  function toggleWargaDropdown(userType) {
+    const wrapper = document.getElementById('wargaSelectWrapper');
+    const roleSelect = document.getElementById('input_role');
+    const wargaSelect = document.getElementById('input_warga_id');
+    if (wrapper && roleSelect) {
+      if (userType === 'superadmin') {
+        wrapper.classList.add('hidden');
+        roleSelect.value = 'superadmin';
+        if (wargaSelect) wargaSelect.value = '';
+      } else {
+        wrapper.classList.remove('hidden');
+        if (roleSelect.value === 'superadmin') {
+          roleSelect.value = 'warga';
+        }
+      }
+    }
+  }
+
+  function handleBtnEditUser(btn) {
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    const username = btn.getAttribute('data-username') || '';
+    const nama = btn.getAttribute('data-nama') || '';
+    const role = btn.getAttribute('data-role') || 'warga';
+    const wargaId = btn.getAttribute('data-warga-id') || '';
+    const noHp = btn.getAttribute('data-no-hp') || '';
+    const isActive = btn.getAttribute('data-active') === '1';
+
+    bukaModalEditUser(id, username, nama, role, wargaId, noHp, isActive);
+  }
+
+  function bukaModalEditUser(id, username, nama, role, wargaId, noHp, isActive) {
+    const form = document.getElementById('formEditUser');
+    if (!form) return;
+    form.action = '/pengaturan/users/edit/' + id;
+    
+    document.getElementById('edit_username_display').textContent = '@' + username;
+    document.getElementById('edit_nama').value = nama;
+    document.getElementById('edit_role').value = (role === 'pejabat') ? 'ketua_rt' : role;
+    document.getElementById('edit_warga_id').value = wargaId || '';
+    document.getElementById('edit_no_hp').value = noHp || '';
+    document.getElementById('edit_is_active').value = isActive ? '1' : '0';
+    document.getElementById('edit_password').value = '';
+    
+    handleEditRoleChange(role);
+    
+    document.getElementById('modalEditUser').classList.remove('hidden');
+  }
+
+  function handleEditRoleChange(roleVal) {
+    const wrapper = document.getElementById('editWargaSelectWrapper');
+    const wargaSelect = document.getElementById('edit_warga_id');
+    if (wrapper) {
+      if (roleVal === 'superadmin') {
+        wrapper.classList.add('hidden');
+        if (wargaSelect) wargaSelect.value = '';
+      } else {
+        wrapper.classList.remove('hidden');
+      }
+    }
+  }
+
+  // --- QRIS PAYLOAD & LIVE PREVIEW HANDLER ---
+  let qrcodeInstance = null;
+
+  function initQrisPreview() {
+    const payloadEl = document.getElementById('input_qris_payload');
+    if (!payloadEl) return;
+    updatePayloadAnalysis(payloadEl.value);
+  }
+
+  function updatePayloadAnalysis(val) {
+    const trimmed = (val || '').trim();
+    const countEl = document.getElementById('payloadCharCount');
+    const badgeEl = document.getElementById('qrisStatusBadge');
+    const container = document.getElementById('qrisLivePreviewBox');
+    if (!container) return;
+
+    if (countEl) countEl.textContent = trimmed.length;
+
+    // Check EMVCo standard prefix (starts with 000201)
+    const isEmvco = trimmed.startsWith('000201');
+    if (badgeEl) {
+      if (!trimmed) {
+        badgeEl.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700';
+        badgeEl.innerHTML = '<i class="fa-solid fa-circle-minus mr-1"></i>Payload Kosong';
+      } else if (isEmvco && trimmed.length >= 60) {
+        badgeEl.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        badgeEl.innerHTML = '<i class="fa-solid fa-check-circle mr-1"></i>EMVCo QRIS Valid';
+      } else {
+        badgeEl.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30';
+        badgeEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i>Format Non-EMVCo';
+      }
+    }
+
+    // Live Render QR Code using local qrcode.min.js
+    if (trimmed && typeof QRCode !== 'undefined') {
+      try {
+        container.innerHTML = '';
+        qrcodeInstance = new QRCode(container, {
+          text: trimmed,
+          width: 128,
+          height: 128,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.warn('QRCode rendering error:', err);
+      }
+    } else if (!trimmed) {
+      container.innerHTML = '<img id="qrisFallbackImg" src="/static/img/qris_demo.svg" alt="Preview QRIS" class="w-32 h-32 object-contain">';
+      qrcodeInstance = null;
+    }
+  }
+
+  function handlePayloadInput() {
+    const payloadEl = document.getElementById('input_qris_payload');
+    if (payloadEl) updatePayloadAnalysis(payloadEl.value);
+  }
+
+  function copyPayloadToClipboard() {
+    const payloadEl = document.getElementById('input_qris_payload');
+    if (!payloadEl || !payloadEl.value.trim()) {
+      alert('Payload QRIS masih kosong.');
+      return;
+    }
+    const textToCopy = payloadEl.value.trim();
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(textToCopy).then(() => showCopiedFeedback()).catch(() => fallbackCopy(textToCopy));
+    } else {
+      fallbackCopy(textToCopy);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showCopiedFeedback();
+    } catch (e) {
+      alert('Gagal menyalin otomatis. Silakan salin manual.');
+    }
+    document.body.removeChild(textArea);
+  }
+
+  function showCopiedFeedback() {
+    const copyIcon = document.getElementById('copyIcon');
+    const copyLabel = document.getElementById('copyLabel');
+    if (copyIcon && copyLabel) {
+      copyIcon.className = 'fa-solid fa-check text-emerald-400 text-xs';
+      copyLabel.textContent = 'Tersalin!';
+      setTimeout(() => {
+        copyIcon.className = 'fa-regular fa-copy text-xs';
+        copyLabel.textContent = 'Salin';
+      }, 2000);
+    }
+  }
+
+  function resetDefaultPayload() {
+    const defaultPayload = '00020101021126600016ID.CO.QRIS.WWW01189360052300000000010215ID10200300405060303UME51440014ID.CO.QRIS.WWW0215ID10200300405060303UME5204541153033605802ID5925KAS PAGUYUBAN RT 09 RW 146008DRIYOREJO61056117762200716KASRT09DRIYOREJO6304A1B2';
+    const payloadEl = document.getElementById('input_qris_payload');
+    if (payloadEl) {
+      payloadEl.value = defaultPayload;
+      updatePayloadAnalysis(defaultPayload);
+    }
+  }
+
+  // --- MAYAR JAVASCRIPT HELPERS ---
+  function toggleApiKeyVisibility() {
+    const input = document.getElementById('input_mayar_api_key');
+    const icon = document.getElementById('apiKeyEyeIcon');
+    if (input && icon) {
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash text-xs text-amber-400';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-regular fa-eye text-xs text-slate-400';
+      }
+    }
+  }
+
+  function generateRandomWebhookToken() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_';
+    let token = 'mayar_rt09_sec_';
+    for (let i = 0; i < 20; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const input = document.getElementById('input_mayar_webhook_token');
+    if (input) {
+      input.value = token;
+      updateWebhookUrlDisplay(token);
+    }
+  }
+
+  function updateWebhookUrlDisplay(token) {
+    const display = document.getElementById('displayWebhookUrl');
+    if (display) {
+      const origin = window.location.origin;
+      display.value = origin + '/api/webhook/mayar?token=' + encodeURIComponent(token.trim());
+    }
+  }
+
+  function copyWebhookToken() {
+    const input = document.getElementById('input_mayar_webhook_token');
+    if (!input || !input.value) return;
+    const text = input.value.trim();
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        const icon = document.getElementById('copyTokenIcon');
+        const label = document.getElementById('copyTokenText');
+        if (icon && label) {
+          icon.className = 'fa-solid fa-check text-emerald-400 text-xs';
+          label.textContent = 'Disalin';
+          setTimeout(() => {
+            icon.className = 'fa-regular fa-copy text-xs';
+            label.textContent = 'Salin';
+          }, 2000);
+        }
+      }).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function copyWebhookUrlToClipboard() {
+    const display = document.getElementById('displayWebhookUrl');
+    if (!display || !display.value) return;
+    const text = display.value.trim();
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        const icon = document.getElementById('copyWebhookIcon');
+        const label = document.getElementById('copyWebhookText');
+        if (icon && label) {
+          icon.className = 'fa-solid fa-check text-emerald-400 text-xs';
+          label.textContent = 'URL Tersalin!';
+          setTimeout(() => {
+            icon.className = 'fa-regular fa-copy text-xs';
+            label.textContent = 'Salin Webhook URL';
+          }, 2000);
+        }
+      }).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+</script>
+{% endblock %}
