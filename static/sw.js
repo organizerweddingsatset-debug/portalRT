@@ -1,9 +1,10 @@
 // Service Worker for Portal RT 09 PWA
-const CACHE_NAME = 'portal-rt-cache-v1';
+const CACHE_NAME = 'portal-rt-cache-v2';
 const CORE_ASSETS = [
   '/',
   '/static/css/tailwind.min.css',
   '/static/css/custom.css',
+  '/static/img/logo_rt.png',
   '/static/img/logo_rt.svg',
   '/static/manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css'

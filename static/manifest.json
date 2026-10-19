@@ -12,6 +12,12 @@
   "categories": ["utilities", "productivity", "government"],
   "icons": [
     {
+      "src": "/static/img/logo_rt.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/static/img/logo_rt.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",

@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Portal RT 09">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo_rt.svg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo_rt.png') }}?v=20261019c">
 
   <!-- Dynamic Theme Initializer (Prevents Theme Flash) -->
   <script>
@@ -44,8 +44,8 @@
   <!-- Mobile Top Bar -->
   <div class="md:hidden bg-[#0d1224] border-b border-[#1f2a4a] p-4 flex items-center justify-between no-print">
     <div class="flex items-center space-x-3">
-      <img src="{{ url_for('static', filename='img/logo_rt.svg') }}" alt="Logo RT"
-        class="w-8 h-8 rounded-full border border-indigo-500">
+      <img src="{{ url_for('static', filename='img/logo_rt.png') }}?v=20261019c" alt="Logo RT"
+        class="w-8 h-8 rounded-full border border-amber-500/70 shadow object-cover">
       <div>
         <h1 class="text-sm font-bold text-white leading-tight">Halo, {{ current_user.username if current_user else
           'Tamu' }}</h1>
@@ -69,8 +69,8 @@
     <!-- Header Profile Box -->
     <div class="flex items-center space-x-3 pb-5 mb-4 border-b border-[#1b2542]">
       <div class="relative">
-        <img src="{{ url_for('static', filename='img/logo_rt.svg') }}" alt="Logo RT 09"
-          class="w-10 h-10 rounded-full border-2 border-indigo-500/80 shadow-md">
+        <img src="{{ url_for('static', filename='img/logo_rt.png') }}?v=20261019c" alt="Logo RT 09"
+          class="w-10 h-10 rounded-full border-2 border-amber-500/80 shadow-md object-cover">
         <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#0d1224] rounded-full"></span>
       </div>
       <div class="overflow-hidden">
@@ -243,7 +243,7 @@
     <!-- PWA Install Prompt Banner -->
     <div id="pwaInstallBanner" class="hidden mx-6 mt-4 p-3.5 rounded-xl bg-gradient-to-r from-indigo-900/90 via-indigo-800/80 to-purple-900/90 border border-indigo-500/40 text-white shadow-xl flex items-center justify-between no-print animate-fade-in">
       <div class="flex items-center space-x-3">
-        <img src="{{ url_for('static', filename='img/logo_rt.svg') }}" alt="Portal RT" class="w-9 h-9 rounded-full border border-indigo-400">
+        <img src="{{ url_for('static', filename='img/logo_rt.png') }}?v=20261019c" alt="Portal RT" class="w-9 h-9 rounded-full border border-amber-400 object-cover">
         <div>
           <h4 class="text-xs font-bold text-white flex items-center gap-1.5">
             <span>Pasang Aplikasi Portal RT 09</span>

@@ -165,13 +165,8 @@
 
   <!-- Kop Surat Resmi -->
   <div class="header" style="display:flex; align-items:center; justify-content:space-between; border-bottom:none; padding-bottom:8px; margin-bottom:0; text-align:left;">
-    <div style="width:75px; height:75px; flex-shrink:0;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="75" height="75">
-        <polygon points="50,4 92,20 92,62 50,96 8,62 8,20" fill="#1e1b4b" stroke="#d97706" stroke-width="3" />
-        <polygon points="50,12 84,25 84,58 50,86 16,58 16,25" fill="#ffffff" stroke="#1e1b4b" stroke-width="1.5" />
-        <circle cx="50" cy="50" r="18" fill="#d97706" />
-        <text x="50" y="55" font-family="'Segoe UI', Arial, sans-serif" font-size="12" font-weight="900" fill="#ffffff" text-anchor="middle">RT09</text>
-      </svg>
+    <div style="width:75px; height:75px; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+      <img src="{{ url_for('static', filename='img/logo_rt.png') }}" alt="Logo RT 09" style="width:72px; height:72px; object-fit:contain;">
     </div>
     <div style="flex:1; text-align:center; padding:0 15px;">
       <h3 style="margin:0; font-size:12pt; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">PEMERINTAH KABUPATEN {{ kota | upper }}</h3>
